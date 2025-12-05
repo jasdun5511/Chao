@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>简易植物大战僵尸</title>
+    <title>迷你植物大战僵尸</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="info-bar">
-            阳光：<span id="sun-count">100</span>
-            <button id="plant-peashooter-btn" data-cost="50">种植豌豆 (50)</button>
+
+    <div class="game-container">
+        <h1>🌻 迷你植物大战僵尸 🧟</h1>
+        <div class="score-board">
+            得分: <span id="score">0</span> | <span style="color:red; font-size: 0.8em;">如果僵尸到达左侧，游戏结束！</span>
         </div>
         
-        <div id="game-grid">
-            </div>
+        <div id="game-area">
+            <div class="lane" id="lane-0" onclick="plantShooter(0)"></div>
+            <div class="lane" id="lane-1" onclick="plantShooter(1)"></div>
+            <div class="lane" id="lane-2" onclick="plantShooter(2)"></div>
+        </div>
 
-        <div id="game-message">点击网格种植豌豆！</div>
+        <p>点击绿色的草坪行，在最左侧种植植物！(每行只能种一个)</p>
     </div>
 
     <script src="script.js"></script>
