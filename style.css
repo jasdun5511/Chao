@@ -61,3 +61,12 @@ body {
     z-index: 5;
     color: #00ff00;
 }
+/* 当屏幕宽度小于 800px 时（即手机竖屏时） */
+@media (max-width: 800px) {
+    .game-container {
+        /* 强制把游戏缩小到屏幕宽度的 95% */
+        transform: scale(0.6); 
+        transform-origin: top center;
+        width: 100%;
+    }
+}
