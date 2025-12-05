@@ -3,24 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>迷你植物大战僵尸</title>
+    <title>植物大战僵尸 v2.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="game-container">
-        <h1>🌻 迷你植物大战僵尸 🧟</h1>
-        <div class="score-board">
-            得分: <span id="score">0</span> | <span style="color:red; font-size: 0.8em;">如果僵尸到达左侧，游戏结束！</span>
-        </div>
-        
-        <div id="game-area">
-            <div class="lane" id="lane-0" onclick="plantShooter(0)"></div>
-            <div class="lane" id="lane-1" onclick="plantShooter(1)"></div>
-            <div class="lane" id="lane-2" onclick="plantShooter(2)"></div>
+        <div class="header">
+            <div class="resource-bar">
+                ☀️ 阳光: <span id="sun-count">100</span>
+            </div>
+            <div class="score-bar">
+                分数: <span id="score">0</span>
+            </div>
         </div>
 
-        <p>点击绿色的草坪行，在最左侧种植植物！(每行只能种一个)</p>
+        <div class="plant-selector">
+            <div class="card selected" onclick="selectPlant('peashooter')" id="card-peashooter">
+                <div class="icon">🌱</div>
+                <div class="cost">100</div>
+            </div>
+            <div class="card" onclick="selectPlant('sunflower')" id="card-sunflower">
+                <div class="icon">🌻</div>
+                <div class="cost">50</div>
+            </div>
+            <div class="card" onclick="selectPlant('wallnut')" id="card-wallnut">
+                <div class="icon">🥔</div>
+                <div class="cost">50</div>
+            </div>
+        </div>
+        
+        <div id="game-grid">
+            </div>
+
+        <div id="message">点击上方卡片选择植物，然后点击草地种植！</div>
     </div>
 
     <script src="script.js"></script>
