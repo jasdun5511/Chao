@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>植物大战姜丝炒肉 - 图鉴加强版</title>
+    <title>植物大战姜丝炒肉 - 极速修复版</title>
     <style>
-        /* --- CSS 样式部分 (保持不变) --- */
+        /* --- CSS 样式部分 --- */
         body {
             background-color: #222;
             color: white;
@@ -25,7 +25,6 @@
             padding-bottom: 20px;
         }
 
-        /* 修改了H1标题颜色，使其更像“肉”色一点 */
         h1 { text-align: center; margin: 15px 0; font-size: 28px; text-shadow: 2px 2px 0 #000; color: #FF9800; }
 
         .top-area {
@@ -107,7 +106,8 @@
             position: absolute; width: 80px; height: 80px;
             display: flex; align-items: center; justify-content: center;
             font-size: 55px; left: 10px; top: 10px;
-            pointer-events: none; z-index: 10;
+            pointer-events: none; /* 关键：让鼠标点击穿透僵尸和子弹，点到下面的格子 */
+            z-index: 10;
         }
         .zombie { z-index: 20; transition: transform 0.05s linear; }
         .zombie.frozen { filter: hue-rotate(180deg) brightness(1.2); }
@@ -134,7 +134,6 @@
         }
         
         .info-section h3 { color: #4CAF50; margin-bottom: 10px; }
-        /* 修改了右侧标题颜色 */
         .info-section h3.zombie-title { color: #FF9800; }
 
         .info-card {
@@ -153,13 +152,12 @@
             display: inline-block; background: #555; color: white; 
             padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px; 
         }
-
     </style>
 </head>
 <body>
 
     <div id="game-wrapper">
-        <h1>🌻 植物大战姜丝炒肉 (正式版) 🐷</h1>
+        <h1>🌻 植物大战姜丝炒肉 (极速版) 🐷</h1>
         
         <div class="top-area">
             <div class="header">
@@ -210,7 +208,7 @@
                         <div class="info-text">
                             <h4>向日葵 (Sunflower)</h4>
                             <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 4</span></div>
-                            <p>后勤保障。每隔 4 秒生产 25 点阳光。建议种在最左边。</p>
+                            <p>每隔 3 秒生产 25 点阳光。</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -218,7 +216,7 @@
                         <div class="info-text">
                             <h4>豌豆射手 (Peashooter)</h4>
                             <div><span class="stat-tag">花费: 100</span><span class="stat-tag">生命: 5</span></div>
-                            <p>主要火力。发射直线豌豆攻击敌人。</p>
+                            <p>发射直线豌豆攻击敌人。</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -226,7 +224,7 @@
                         <div class="info-text">
                             <h4>寒冰射手 (Snow Pea)</h4>
                             <div><span class="stat-tag">花费: 175</span><span class="stat-tag">生命: 5</span></div>
-                            <p>控制型火力。发射冰豌豆，造成伤害并使敌人<b>减速 50%</b>。</p>
+                            <p>发射冰豌豆，使敌人<b>减速 50%</b>。</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -234,7 +232,7 @@
                         <div class="info-text">
                             <h4>坚果墙 (Wall-nut)</h4>
                             <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 40</span></div>
-                            <p>防御大师。拥有极高的生命值，用来阻挡敌人的前进。</p>
+                            <p>防御大师，阻挡敌人的前进。</p>
                         </div>
                     </div>
                     <div class="info-card">
@@ -242,7 +240,7 @@
                         <div class="info-text">
                             <h4>樱桃炸弹 (Cherry Bomb)</h4>
                             <div><span class="stat-tag">花费: 150</span><span class="stat-tag">范围: 3x3</span></div>
-                            <p>一次性植物。种下 3 秒后爆炸，秒杀周围所有敌人。</p>
+                            <p>3秒后爆炸，秒杀范围内的敌人。</p>
                         </div>
                     </div>
                 </div>
@@ -253,24 +251,24 @@
                         <div class="info-icon">🐷</div>
                         <div class="info-text">
                             <h4>普通姜丝炒肉 (Pork)</h4>
-                            <div><span class="stat-tag">生命: 6</span><span class="stat-tag">速度: 普通</span></div>
-                            <p>最常见的食材，虽然弱小但数量众多。</p>
+                            <div><span class="stat-tag">生命: 6</span><span class="stat-tag">速度: 快</span></div>
+                            <p>最常见的食材。</p>
                         </div>
                     </div>
                     <div class="info-card">
                         <div class="info-icon">⛑️</div>
                         <div class="info-text">
                             <h4>路障姜丝炒肉 (Conehead)</h4>
-                            <div><span class="stat-tag">生命: 18</span><span class="stat-tag">速度: 较慢</span></div>
-                            <p>戴着交通锥的猪猪，生命值是普通的 3 倍。</p>
+                            <div><span class="stat-tag">生命: 18</span><span class="stat-tag">速度: 中</span></div>
+                            <p>戴着交通锥，生命值是普通的 3 倍。</p>
                         </div>
                     </div>
                     <div class="info-card">
                         <div class="info-icon">👺</div>
                         <div class="info-text">
                             <h4>铁桶姜丝炒肉 (Buckethead)</h4>
-                            <div><span class="stat-tag" style="background:#d32f2f">生命: 35</span><span class="stat-tag">速度: 较慢</span></div>
-                            <p><b>危险！</b>戴着铁桶，防御力极高。需要集中火力。</p>
+                            <div><span class="stat-tag" style="background:#d32f2f">生命: 35</span><span class="stat-tag">速度: 中</span></div>
+                            <p><b>危险！</b>戴着铁桶，防御力极高。</p>
                         </div>
                     </div>
                 </div>
@@ -279,7 +277,6 @@
     </div>
 
     <script>
-        // --- 1. 屏幕适配脚本 ---
         function resizeGame() {
             const wrapper = document.getElementById('game-wrapper');
             const targetWidth = 940; 
@@ -294,7 +291,6 @@
         window.addEventListener('resize', resizeGame);
         resizeGame();
 
-        // --- 2. 游戏核心数据 ---
         const board = document.getElementById('game-board');
         const sunText = document.getElementById('sun-count');
         const scoreText = document.getElementById('score-count');
@@ -309,11 +305,12 @@
         const zombies = []; 
         const bullets = []; 
 
-        // 初始化网格 UI
+        // 初始化网格 - 关键修复：给每个格子加上ID
         for (let r = 0; r < 5; r++) {
             for (let c = 0; c < 9; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
+                cell.id = `cell-${r}-${c}`; // 修复：唯一的ID
                 cell.dataset.r = r;
                 cell.dataset.c = c;
                 cell.addEventListener('click', () => handleCellClick(r, c));
@@ -321,8 +318,7 @@
             }
         }
 
-        // --- 3. 排行榜逻辑 ---
-        const STORAGE_KEY = 'pvz_pork_scores'; // 修改了存储KEY，新榜单
+        const STORAGE_KEY = 'pvz_pork_scores_v2'; 
         function loadScores() {
             const savedScores = localStorage.getItem(STORAGE_KEY);
             return savedScores ? JSON.parse(savedScores) : [];
@@ -349,7 +345,6 @@
             });
         }
 
-        // --- 4. 游戏操作逻辑 (保持不变) ---
         function updateCards() {
             checkCard('card-sunflower', 50);
             checkCard('card-pea', 100);
@@ -390,8 +385,9 @@
         }
 
         function createPlant(r, c, type) {
-            const cellIndex = r * 9 + c;
-            const cell = board.children[cellIndex];
+            // 修复：通过ID查找格子，确保位置绝对正确
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            
             const el = document.createElement('div');
             el.className = 'element';
             
@@ -406,26 +402,26 @@
                     sun += 25; sunText.innerText = sun; updateCards();
                     el.style.transform = "scale(1.3)";
                     setTimeout(() => el.style.transform = "scale(1)", 200);
-                }, 4000);
+                }, 3000); // 提速：3秒产一次
             } else if (type === 'pea') {
                 symbol = '🌱'; hp = 5;
                 const timer = setInterval(() => {
                     if (plant.dead) { clearInterval(timer); return; }
                     const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
                     if (hasEnemy) createBullet(r, c, false);
-                }, 1500);
+                }, 1200); // 提速：1.2秒一发
             } else if (type === 'ice') {
                 symbol = '🧊'; hp = 5;
                 const timer = setInterval(() => {
                     if (plant.dead) { clearInterval(timer); return; }
                     const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
                     if (hasEnemy) createBullet(r, c, true);
-                }, 1500);
+                }, 1200);
             } else if (type === 'nut') {
                 symbol = '🌰'; hp = 40;
             } else if (type === 'bomb') {
                 symbol = '🍒'; hp = 1;
-                setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 3000);
+                setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000); // 提速：2秒爆炸
             }
 
             el.innerText = symbol;
@@ -462,7 +458,6 @@
             }
         }
 
-        // --- 生成姜丝炒肉 (已更新图标) ---
         function spawnZombie() {
             if (!gameActive) return;
             const r = Math.floor(Math.random() * 5);
@@ -472,14 +467,13 @@
             const rand = Math.random();
             let type = 'normal';
             let hp = 6;
-            let speed = 0.6; 
-            // 修改了这里的默认图标为猪
+            let speed = 0.8; // 提速：基础速度加快
             let symbol = '🐷';
 
             if (rand < 0.1) { // 10% 铁桶
-                type = 'bucket'; hp = 35; speed = 0.5; symbol = '👺'; 
+                type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
             } else if (rand < 0.35) { // 25% 路障
-                type = 'cone'; hp = 18; speed = 0.6; symbol = '⛑️';
+                type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
             }
             
             el.innerText = symbol;
@@ -497,10 +491,10 @@
             });
         }
         
-        // --- 5. 游戏主循环 (25ms) (保持不变) ---
-        setInterval(gameLoop, 25);
-        setInterval(spawnZombie, 4000); 
-        setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 8000);
+        // --- 游戏循环：提速到 20ms (50 FPS) ---
+        setInterval(gameLoop, 20);
+        setInterval(spawnZombie, 3000); // 提速：3秒生成一只
+        setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000); // 提速：6秒给阳光
 
         function gameLoop() {
             if (!gameActive) return;
@@ -508,7 +502,8 @@
             // 子弹逻辑
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
-                b.x += 4; b.el.style.left = b.x + 'px';
+                b.x += 6; // 提速：子弹飞行更快
+                b.el.style.left = b.x + 'px';
                 let hit = false;
                 for (const z of zombies) {
                     if (z.dead) continue;
@@ -552,7 +547,7 @@
                     if (plant && !plant.dead) {
                         if (z.x < (col * 100 + 60)) {
                             z.eating = true;
-                            if (Math.random() < 0.03) {
+                            if (Math.random() < 0.05) { // 提速：啃食速度加快
                                 plant.hp--;
                                 plant.el.style.opacity = 0.5;
                                 setTimeout(() => plant.el.style.opacity = 1, 100);
@@ -565,7 +560,6 @@
                 if (z.x < -40) {
                     gameActive = false;
                     saveScore(score);
-                    // 修改了结束语
                     alert(`🧠 游戏结束！\n你的脑子被姜丝炒肉吃了。\n最终得分: ${score}`);
                     location.reload();
                     return;
