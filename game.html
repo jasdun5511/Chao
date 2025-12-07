@@ -601,6 +601,38 @@ function spawnZombie() {
         setInterval(spawnZombie, 6000); 
         setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
+// 主游戏逻辑循环
+setInterval(gameLoop, 20);
+
+// 阳光自然掉落
+setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
+
+// --- 僵尸生成控制：使用函数来启动/停止生成 ---
+function startSpawning() {
+    if (spawnIntervalId) clearInterval(spawnIntervalId);
+    spawnIntervalId = setInterval(spawnZombie, zombieSpawnRate);
+}
+
+// 初始化生成
+startSpawning();
+
+// --- 巨波逻辑（每 60 秒触发一次）---
+setInterval(() => {
+    if (!gameActive) return;
+
+    // 1. 启动巨波：生成间隔缩短至 1000ms (1秒)
+    zombieSpawnRate = 1000;
+    startSpawning();
+    showMessage("🚨 巨波来袭！大量姜丝炒肉正在赶来！", "red");
+
+    // 2. 10 秒后恢复正常
+    setTimeout(() => {
+        zombieSpawnRate = 3000; // 恢复默认间隔
+        startSpawning();
+        showMessage("巨波结束，恢复正常。", "#ffeb3b");
+    }, 10000); // 持续 10 秒
+}, 60000); // 每 60 秒触发一次
+
         // --- 冷却计时器，每 20ms 运行一次 ---
         const COOLDOWN_TICK = 20; 
         setInterval(() => {
