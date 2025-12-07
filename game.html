@@ -506,24 +506,49 @@
             bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: isIce });
         }
 
-        function explode(r, c) {
-            showMessage("💥 BOOM! 💥", "red");
-            const blast = document.createElement('div');
-            blast.innerText = '🔥';
-            blast.style.position = 'absolute'; blast.style.fontSize = '150px';
-            blast.style.left = c * 100 - 50 + 'px'; 
-            blast.style.top = r * 100 - 50 + 'px'; 
-            blast.style.zIndex = 100;
-            board.appendChild(blast);
-            setTimeout(() => blast.remove(), 500);
+       function explode(r, c) {
+    showMessage("💥 BOOM! 💥", "red");
+    const blast = document.createElement('div');
+    blast.innerText = '🔥';
+    blast.style.position = 'absolute'; blast.style.fontSize = '150px';
+    // 确保爆炸效果定位准确
+    blast.style.left = c * 100 - 50 + 'px'; 
+    blast.style.top = r * 100 - 50 + 'px'; 
+    blast.style.zIndex = 100;
+    board.appendChild(blast);
+    setTimeout(() => blast.remove(), 500);
 
-            for (const z of zombies) {
-                if (z.dead) continue;
-                if (z.row >= r - 1 && z.row <= r + 1 && z.x > (c-2)*100 && z.x < (c+2)*100) {
-                    killZombie(z);
-                }
+    // --- 新的 3x3 爆炸判定逻辑 ---
+    
+    // 爆炸范围：行 r-1, r, r+1；列 c-1, c, c+1
+    const minRow = Math.max(0, r - 1);
+    const maxRow = Math.min(4, r + 1);
+
+    for (const z of zombies) {
+        if (z.dead) continue;
+        
+        // 1. 检查行范围
+        if (z.row >= minRow && z.row <= maxRow) {
+            
+            // 2. 检查列范围：僵尸的x坐标是否在目标3列（c-1, c, c+1）的范围内
+            
+            // 目标3列的左边界 (c-1)
+            const minX = (c - 1) * 100; 
+            // 目标3列的右边界 (c+2)
+            const maxX = (c + 2) * 100; 
+            
+            // 僵尸的碰撞盒（假设僵尸中心在 z.x + 40）
+            const zombieCenter = z.x + 40;
+            
+            // 判定：如果僵尸的中心点在目标 3x100px 的区域内，即视为命中
+            if (zombieCenter >= minX && zombieCenter < maxX) {
+                killZombie(z);
             }
         }
+    }
+    // --------------------------------
+}
+
 
         function spawnZombie() {
             if (!gameActive) return;
