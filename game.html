@@ -2,41 +2,54 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>植物大战僵尸 - 终极修复版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>植物大战僵尸 - 网格重制版</title>
     <style>
-        /* --- CSS 样式部分 --- */
         body {
             background-color: #222;
             color: white;
-            font-family: 'Arial', sans-serif;
+            font-family: sans-serif;
             margin: 0;
+            padding: 0;
+            overflow: hidden; /* 禁止滚动 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            user-select: none; /* 防止双击选中文本 */
+            touch-action: none; /* 优化触屏响应 */
         }
 
-        h1 { margin: 10px 0; font-size: 24px; }
+        /* 游戏容器：用于整体缩放 */
+        #game-wrapper {
+            transform-origin: top center;
+            width: 920px; /* 固定逻辑宽度 */
+            padding-bottom: 20px;
+        }
 
-        /* 顶部状态栏 */
+        h1 { text-align: center; margin: 10px 0; font-size: 24px; text-shadow: 2px 2px 0 #000; }
+
+        /* 顶部UI */
         .header {
             display: flex;
-            gap: 20px;
-            font-size: 20px;
+            justify-content: space-between;
             background: #444;
             padding: 10px 20px;
             border-radius: 10px;
-            margin-bottom: 10px;
             border: 2px solid #666;
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: bold;
         }
-        .sun { color: #FFD700; font-weight: bold; }
+        .sun { color: #FFD700; }
 
-        /* 植物卡槽 */
+        /* 卡片槽 */
         .seed-bank {
             display: flex;
-            gap: 10px;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 10px;
         }
         .card {
             width: 70px;
@@ -44,312 +57,427 @@
             background: #9aa;
             border: 3px solid #555;
             border-radius: 5px;
-            cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: all 0.1s;
+            position: relative;
         }
-        .card:hover { transform: scale(1.05); }
         .card.active { 
             border-color: #FFD700; 
             background: #fff; 
             box-shadow: 0 0 15px #FFD700;
+            transform: scale(1.1);
+        }
+        /* 遮罩层：钱不够时变黑 */
+        .card.disabled::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            border-radius: 3px;
         }
         .card-emoji { font-size: 35px; }
-        .card-cost { font-size: 14px; color: black; font-weight: bold; }
+        .card-cost { font-size: 14px; font-weight: bold; color: #000; }
 
-        /* 游戏主舞台 */
+        /* --- 核心网格地图 --- */
         #game-board {
             position: relative;
-            width: 800px;
-            height: 500px;
+            width: 900px; /* 9列 * 100px */
+            height: 500px; /* 5行 * 100px */
             background-color: #4CAF50;
-            border: 8px solid #3e2723;
-            border-radius: 5px;
+            border: 10px solid #3e2723;
+            border-radius: 8px;
             display: grid;
-            grid-template-rows: repeat(5, 1fr); /* 5行 */
-            overflow: hidden; /* 防止僵尸跑出框外 */
+            grid-template-rows: repeat(5, 100px);
+            grid-template-columns: repeat(9, 100px);
+            /* 格子背景纹理 */
+            background-image: 
+                linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C),
+                linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C);
+            background-size: 200px 200px;
+            background-position: 0 0, 100px 100px;
+            overflow: hidden; 
         }
 
-        /* 每一行 */
-        .row {
-            border-bottom: 1px dashed rgba(255,255,255,0.3);
-            position: relative; /* 用于定位行内的元素 */
+        /* 单个格子 */
+        .cell {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1); /* 辅助线 */
+        }
+        .cell.active-zone {
+            background-color: rgba(255, 255, 255, 0.3); /* 选中植物后高亮格子 */
+            cursor: pointer;
         }
 
-        /* 游戏元素通用 */
+        /* 游戏元素 */
         .element {
             position: absolute;
             width: 80px;
-            height: 100px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 50px;
-            /* 居中修正 */
-            top: 0;
+            left: 10px; top: 10px;
+            pointer-events: none; /* 让点击穿透到格子 */
+            z-index: 10;
         }
 
-        .plant { left: 10px; z-index: 10; cursor: not-allowed; }
-        .bullet { font-size: 20px; z-index: 5; width: 30px; height: 30px; top: 35px; }
-        .zombie { right: -60px; z-index: 20; transition: transform 0.1s linear; }
+        .zombie {
+            z-index: 20;
+            transition: transform 0.05s linear; /* 平滑移动 */
+        }
         
-        /* 提示信息 */
-        #msg { height: 20px; color: #ffeb3b; margin-bottom: 5px; }
+        .bullet {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+            z-index: 15;
+            left: 50px; top: 40px;
+        }
+
+        #msg { text-align: center; height: 20px; color: #ffeb3b; margin-top: 5px; }
 
     </style>
 </head>
 <body>
 
-    <h1>🌻 植物大战僵尸 (修复版) 🧟</h1>
-    
-    <div class="header">
-        <div class="sun">☀️ 阳光: <span id="sun-count">150</span></div>
-        <div class="score">得分: <span id="score-count">0</span></div>
-    </div>
-
-    <div class="seed-bank">
-        <div class="card" onclick="selectPlant('sunflower', 50, this)">
-            <div class="card-emoji">🌻</div>
-            <div class="card-cost">50</div>
+    <div id="game-wrapper">
+        <h1>🌻 植物大战僵尸 (网格修复版) 🧟</h1>
+        
+        <div class="header">
+            <div class="sun">☀️ <span id="sun-count">150</span></div>
+            <div class="score">得分: <span id="score-count">0</span></div>
         </div>
-        <div class="card" onclick="selectPlant('pea', 100, this)">
-            <div class="card-emoji">🌱</div>
-            <div class="card-cost">100</div>
-        </div>
-        <div class="card" onclick="selectPlant('nut', 50, this)">
-            <div class="card-emoji">🌰</div>
-            <div class="card-cost">50</div>
-        </div>
-    </div>
 
-    <div id="msg">先点击卡片，再点击草坪种植</div>
+        <div class="seed-bank">
+            <div class="card" id="card-sunflower" onclick="selectCard('sunflower', 50)">
+                <div class="card-emoji">🌻</div>
+                <div class="card-cost">50</div>
+            </div>
+            <div class="card" id="card-pea" onclick="selectCard('pea', 100)">
+                <div class="card-emoji">🌱</div>
+                <div class="card-cost">100</div>
+            </div>
+            <div class="card" id="card-nut" onclick="selectCard('nut', 50)">
+                <div class="card-emoji">🌰</div>
+                <div class="card-cost">50</div>
+            </div>
+        </div>
 
-    <div id="game-board">
-        <div class="row" id="row-0" onclick="plantHere(0)"></div>
-        <div class="row" id="row-1" onclick="plantHere(1)"></div>
-        <div class="row" id="row-2" onclick="plantHere(2)"></div>
-        <div class="row" id="row-3" onclick="plantHere(3)"></div>
-        <div class="row" id="row-4" onclick="plantHere(4)"></div>
+        <div id="msg">点击植物卡片，然后在网格中种植</div>
+
+        <div id="game-board"></div>
     </div>
 
     <script>
-        /* --- JavaScript 逻辑部分 --- */
+        // --- 1. 屏幕适配脚本 (核心修复) ---
+        function resizeGame() {
+            const wrapper = document.getElementById('game-wrapper');
+            const targetWidth = 940; // 游戏本身宽度 + padding
+            const screenWidth = window.innerWidth;
+            
+            // 如果屏幕比游戏窄，就缩小
+            if (screenWidth < targetWidth) {
+                const scale = screenWidth / targetWidth;
+                wrapper.style.transform = `scale(${scale})`;
+            } else {
+                wrapper.style.transform = `scale(1)`;
+            }
+        }
+        window.addEventListener('resize', resizeGame);
+        resizeGame(); // 启动时立即执行一次
+
+        // --- 2. 游戏逻辑 ---
         
-        // 游戏数据
+        const board = document.getElementById('game-board');
+        const sunText = document.getElementById('sun-count');
+        const scoreText = document.getElementById('score-count');
+        const msgText = document.getElementById('msg');
+
         let sun = 150;
         let score = 0;
-        let currentSelection = null; // 当前选中的植物 {type: 'pea', cost: 100}
+        let selection = null; // 当前选中的植物 {type, cost}
         
-        // 每一行的数据状态
-        const rowsState = [
-            { hasPlant: false, zombies: [], bullets: [] },
-            { hasPlant: false, zombies: [], bullets: [] },
-            { hasPlant: false, zombies: [], bullets: [] },
-            { hasPlant: false, zombies: [], bullets: [] },
-            { hasPlant: false, zombies: [], bullets: [] }
-        ];
+        // 游戏数据结构：5行 x 9列
+        // grid[row][col] 存放植物对象
+        const grid = Array(5).fill(null).map(() => Array(9).fill(null));
+        const zombies = []; // 存放所有僵尸对象
+        const bullets = []; // 存放所有子弹对象
 
-        // 1. 选择植物功能
-        function selectPlant(type, cost, cardElement) {
-            // 检查钱够不够
+        // 初始化网格 UI
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 9; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.r = r;
+                cell.dataset.c = c;
+                // 点击格子的事件
+                cell.addEventListener('click', () => handleCellClick(r, c));
+                board.appendChild(cell);
+            }
+        }
+
+        // 更新卡片状态 (钱不够变灰)
+        function updateCards() {
+            checkCard('card-sunflower', 50);
+            checkCard('card-pea', 100);
+            checkCard('card-nut', 50);
+        }
+        function checkCard(id, cost) {
+            const el = document.getElementById(id);
+            if (sun < cost) el.classList.add('disabled');
+            else el.classList.remove('disabled');
+        }
+
+        // 选择植物
+        window.selectCard = function(type, cost) {
             if (sun < cost) {
                 showMessage("阳光不足！", "red");
                 return;
             }
-
-            // 更新选中状态
-            currentSelection = { type: type, cost: cost };
+            selection = { type, cost };
             
-            // UI更新：移除其他卡片的高亮，高亮当前卡片
+            // 高亮UI
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            cardElement.classList.add('active');
+            if (type === 'sunflower') document.getElementById('card-sunflower').classList.add('active');
+            if (type === 'pea') document.getElementById('card-pea').classList.add('active');
+            if (type === 'nut') document.getElementById('card-nut').classList.add('active');
             
-            showMessage("已选择: " + type + "，请点击草坪！", "#fff");
+            // 给所有格子加个视觉提示
+            document.querySelectorAll('.cell').forEach(c => c.classList.add('active-zone'));
+            showMessage(`已选择 ${type}，请点击格子`, "#fff");
         }
 
-        // 2. 种植功能
-        function plantHere(rowIndex) {
-            // 如果没选植物，或者这行已经有植物了，啥也不做
-            if (!currentSelection) return;
-            if (rowsState[rowIndex].hasPlant) {
-                showMessage("这里已经有植物了！", "red");
-                return;
-            }
+        // 点击格子种植
+        function handleCellClick(r, c) {
+            if (!selection) return;
 
-            // 二次检查钱够不够
-            if (sun < currentSelection.cost) {
-                showMessage("阳光不足！", "red");
+            // 检查该格子是否已有植物
+            if (grid[r][c]) {
+                showMessage("这里已经有植物了", "red");
                 return;
             }
+            // 二次检查阳光
+            if (sun < selection.cost) return;
 
             // 扣钱
-            sun -= currentSelection.cost;
-            document.getElementById('sun-count').innerText = sun;
+            sun -= selection.cost;
+            sunText.innerText = sun;
+            updateCards();
 
-            // 创建植物元素
-            const rowDiv = document.getElementById(`row-${rowIndex}`);
-            const plantDiv = document.createElement('div');
-            plantDiv.className = 'element plant';
-            
-            // 根据类型设置图标和属性
-            let hp = 5;
-            if (currentSelection.type === 'sunflower') {
-                plantDiv.innerText = '🌻';
-                // 向日葵产阳光逻辑
-                const sunTimer = setInterval(() => {
-                     // 如果植物没了(被吃了)，停止产阳光
-                    if(!plantDiv.parentElement) clearInterval(sunTimer);
-                    sun += 25;
-                    document.getElementById('sun-count').innerText = sun;
-                    // 特效
-                    plantDiv.style.filter = "brightness(1.5)";
-                    setTimeout(()=> plantDiv.style.filter = "none", 200);
-                }, 4000);
-            } 
-            else if (currentSelection.type === 'pea') {
-                plantDiv.innerText = '🌱';
-                // 射手逻辑
-                const shootTimer = setInterval(() => {
-                    if(!plantDiv.parentElement) clearInterval(shootTimer);
-                    // 只有当这一行有僵尸时才射击
-                    if(rowsState[rowIndex].zombies.length > 0) {
-                        createBullet(rowIndex);
-                    }
-                }, 1500);
-            }
-            else if (currentSelection.type === 'nut') {
-                plantDiv.innerText = '🌰';
-                hp = 20; // 坚果血厚
-            }
+            // 生成植物
+            createPlant(r, c, selection.type);
 
-            // 添加到页面
-            rowDiv.appendChild(plantDiv);
-
-            // 更新数据状态
-            rowsState[rowIndex].hasPlant = true;
-            rowsState[rowIndex].plantElement = plantDiv; // 保存引用以便删除
-            rowsState[rowIndex].plantHp = hp;
-
-            // 重置选中状态
-            currentSelection = null;
+            // 清除选中状态
+            selection = null;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('active-zone'));
             showMessage("种植成功！", "#4CAF50");
         }
 
-        // 3. 子弹逻辑
-        function createBullet(rowIndex) {
-            const rowDiv = document.getElementById(`row-${rowIndex}`);
-            const bullet = document.createElement('div');
-            bullet.className = 'element bullet';
-            bullet.innerText = '🟢';
-            bullet.style.left = '60px';
-            rowDiv.appendChild(bullet);
+        function createPlant(r, c, type) {
+            const cellIndex = r * 9 + c;
+            const cell = board.children[cellIndex];
+            
+            const el = document.createElement('div');
+            el.className = 'element';
+            
+            let hp = 5;
+            let symbol = '';
 
-            // 记录子弹
-            rowsState[rowIndex].bullets.push({ el: bullet, left: 60 });
+            if (type === 'sunflower') {
+                symbol = '🌻';
+                hp = 4;
+                // 产阳光逻辑
+                const timer = setInterval(() => {
+                    if (plant.dead) { clearInterval(timer); return; }
+                    sun += 25;
+                    sunText.innerText = sun;
+                    updateCards();
+                    // 特效
+                    el.style.transform = "scale(1.3)";
+                    setTimeout(() => el.style.transform = "scale(1)", 200);
+                }, 4000);
+            } else if (type === 'pea') {
+                symbol = '🌱';
+                hp = 5;
+                // 射击逻辑
+                const timer = setInterval(() => {
+                    if (plant.dead) { clearInterval(timer); return; }
+                    // 检测该行是否有僵尸在植物右边
+                    const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                    if (hasEnemy) {
+                        createBullet(r, c);
+                    }
+                }, 1500);
+            } else if (type === 'nut') {
+                symbol = '🌰';
+                hp = 30; // 血很厚
+            }
+
+            el.innerText = symbol;
+            cell.appendChild(el);
+
+            const plant = { r, c, hp, el, dead: false };
+            grid[r][c] = plant;
         }
 
-        // 4. 生成僵尸
-        function spawnZombie() {
-            const rowIndex = Math.floor(Math.random() * 5);
-            const rowDiv = document.getElementById(`row-${rowIndex}`);
+        function createBullet(r, c) {
+            const el = document.createElement('div');
+            el.className = 'element bullet';
+            el.innerText = '🟢';
+            // 初始位置：植物所在的格子的像素位置
+            // 格子宽度100，所以 left = c * 100 + 50
+            let startX = c * 100 + 50;
+            let startY = r * 100;
             
-            const zombie = document.createElement('div');
-            zombie.className = 'element zombie';
-            zombie.innerText = '🧟';
-            zombie.style.left = '800px'; // 起始位置
-            rowDiv.appendChild(zombie);
+            el.style.left = startX + 'px';
+            el.style.top = startY + 'px'; // 这里的top是相对于board的
+            
+            // 为了让bullet相对于board定位，我们需要手动设置
+            // 但因为我们用了 grid 布局，最好直接 append 到 board 并绝对定位
+            board.appendChild(el);
 
-            rowsState[rowIndex].zombies.push({ el: zombie, left: 800, hp: 5 });
+            bullets.push({ x: startX, y: startY, row: r, el, dead: false });
+        }
+
+        function spawnZombie() {
+            const r = Math.floor(Math.random() * 5);
+            const el = document.createElement('div');
+            el.className = 'element zombie';
+            el.innerText = '🧟';
+            
+            let startX = 900;
+            let startY = r * 100;
+
+            el.style.left = startX + 'px';
+            el.style.top = startY + 'px';
+            board.appendChild(el);
+
+            zombies.push({ 
+                x: startX, 
+                row: r, 
+                el, 
+                hp: 6, 
+                speed: 0.8, // 移动速度
+                dead: false,
+                eating: false // 是否正在吃植物
+            });
         }
         
-        // 每3秒生成一个僵尸
-        setInterval(spawnZombie, 3000);
+        // 游戏循环 (60fps)
+        setInterval(gameLoop, 1000 / 60);
+        // 生成僵尸循环
+        setInterval(spawnZombie, 4000); // 每4秒一只
+        // 自然阳光
+        setInterval(() => { sun += 25; sunText.innerText = sun; updateCards(); }, 8000);
 
-        // 5. 游戏主循环 (每20毫秒刷新一次位置)
-        setInterval(() => {
-            rowsState.forEach((row, rIndex) => {
-                
-                // A. 移动子弹
-                for (let i = row.bullets.length - 1; i >= 0; i--) {
-                    let b = row.bullets[i];
-                    b.left += 5; // 子弹速度
-                    b.el.style.left = b.left + 'px';
+        function gameLoop() {
+            // 1. 子弹逻辑
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += 4; // 子弹速度
+                b.el.style.left = b.x + 'px';
 
-                    // 碰撞检测
-                    let hit = false;
-                    for (let z of row.zombies) {
-                        if (b.left >= z.left && b.left < z.left + 60) {
-                            // 打中了
-                            hit = true;
-                            z.hp--;
-                            z.el.style.opacity = 0.5;
-                            setTimeout(()=> z.el.style.opacity = 1, 100);
-                            
-                            if (z.hp <= 0) {
-                                // 僵尸死
-                                z.el.remove();
-                                // 从数组移除
-                                const zIdx = row.zombies.indexOf(z);
-                                if (zIdx > -1) row.zombies.splice(zIdx, 1);
-                                score += 10;
-                                document.getElementById('score-count').innerText = score;
-                            }
-                            break;
+                // 碰撞检测
+                let hit = false;
+                for (const z of zombies) {
+                    if (z.dead) continue;
+                    // 同一行，且子弹碰到了僵尸 (简单的矩形碰撞)
+                    if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
+                        z.hp--;
+                        z.el.style.opacity = 0.5;
+                        setTimeout(() => z.el.style.opacity = 1, 100);
+                        hit = true;
+                        
+                        if (z.hp <= 0) {
+                            killZombie(z);
                         }
-                    }
-
-                    // 子弹飞出屏幕或打中后移除
-                    if (b.left > 800 || hit) {
-                        b.el.remove();
-                        row.bullets.splice(i, 1);
+                        break;
                     }
                 }
 
-                // B. 移动僵尸
-                for (let i = row.zombies.length - 1; i >= 0; i--) {
-                    let z = row.zombies[i];
-                    
-                    // 如果碰到植物
-                    if (row.hasPlant && z.left < 80) {
-                        // 吃植物 (僵尸停止移动)
-                        // 简单处理：每20帧扣一次血 (约0.5秒扣一次)
-                        if (Math.random() < 0.05) {
-                            row.plantHp--;
-                            row.plantElement.style.opacity = 0.5;
-                            setTimeout(()=> row.plantElement.style.opacity = 1, 100);
+                if (hit || b.x > 900) {
+                    b.el.remove();
+                    bullets.splice(i, 1);
+                }
+            }
 
-                            if (row.plantHp <= 0) {
-                                // 植物被吃
-                                row.plantElement.remove();
-                                row.hasPlant = false;
-                                row.plantElement = null;
+            // 2. 僵尸逻辑
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const z = zombies[i];
+                if (z.dead) continue;
+
+                // 只有当没在吃植物时才移动
+                if (!z.eating) {
+                    z.x -= z.speed;
+                    z.el.style.left = z.x + 'px';
+                }
+
+                // 计算僵尸目前在哪一列
+                // 格子中心点检测
+                const col = Math.floor((z.x + 40) / 100);
+
+                // 吃植物判定
+                if (col >= 0 && col < 9) {
+                    const plant = grid[z.row][col];
+                    if (plant && !plant.dead) {
+                        // 碰到了植物！
+                        // 简单判断：如果僵尸中心进入了格子中心范围
+                        if (z.x < (col * 100 + 60)) {
+                            z.eating = true;
+                            // 伤害植物 (每60帧扣一次血，大概1秒一次)
+                            if (Math.random() < 0.02) {
+                                plant.hp--;
+                                plant.el.style.opacity = 0.5;
+                                setTimeout(() => plant.el.style.opacity = 1, 100);
+                                if (plant.hp <= 0) {
+                                    killPlant(plant);
+                                    z.eating = false; // 吃完了，继续走
+                                }
                             }
                         }
                     } else {
-                        // 正常移动
-                        z.left -= 1; 
-                        z.el.style.left = z.left + 'px';
-                    }
-
-                    // 输掉游戏
-                    if (z.left < -50) {
-                        alert("🧠 僵尸吃掉了你的脑子！游戏结束。");
-                        location.reload();
+                        z.eating = false; // 没植物了，继续走
                     }
                 }
-            });
-        }, 30); // 30ms 刷新一次
 
-        // 辅助：显示信息
-        function showMessage(text, color) {
-            const msg = document.getElementById('msg');
-            msg.innerText = text;
-            msg.style.color = color || 'white';
+                // 输掉游戏
+                if (z.x < -40) {
+                    alert("游戏结束！");
+                    location.reload();
+                    return; // 停止循环
+                }
+            }
         }
+
+        function killZombie(z) {
+            z.dead = true;
+            z.el.remove();
+            // 从数组移除
+            const idx = zombies.indexOf(z);
+            if (idx > -1) zombies.splice(idx, 1);
+            score += 10;
+            scoreText.innerText = score;
+        }
+
+        function killPlant(p) {
+            p.dead = true;
+            p.el.remove();
+            grid[p.r][p.c] = null;
+        }
+
+        function showMessage(text, color) {
+            msgText.innerText = text;
+            msgText.style.color = color;
+        }
+
+        // 初始化更新一次卡片状态
+        updateCards();
 
     </script>
 </body>
