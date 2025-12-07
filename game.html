@@ -550,41 +550,55 @@
 }
 
 
-        function spawnZombie() {
-            if (!gameActive) return;
-            const r = Math.floor(Math.random() * 5);
-            const el = document.createElement('div');
-            el.className = 'element zombie';
-            
-            const rand = Math.random();
-            let type = 'normal';
-            let hp = 6;
-            let speed = 0.8; 
-            let symbol = '🐷';
+        // 新增：巨波状态变量
+let zombieSpawnRate = 3000; // 默认 3000ms
+let spawnIntervalId = null; 
 
-            if (rand < 0.1) {
-                type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
-            } else if (rand < 0.35) {
-                type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
-            }
-            
-            el.innerText = symbol;
-            let startX = 900;
-            let startY = r * 100 + 10;
+function spawnZombie() {
+    if (!gameActive) return;
+    const r = Math.floor(Math.random() * 5);
+    const el = document.createElement('div');
+    el.className = 'element zombie';
+    
+    // 巨波时提高出现硬核僵尸的概率
+    const rand = Math.random();
+    let type = 'normal';
+    let hp = 6;
+    let speed = 0.8; 
+    let symbol = '🐷';
 
-            el.style.left = startX + 'px'; el.style.top = startY + 'px';
-            board.appendChild(el);
-
-            zombies.push({ 
-                x: startX, row: r, el, hp: hp, 
-                baseSpeed: speed, speed: speed,
-                dead: false, eating: false,
-                frozenTimer: 0
-            });
+    if (zombieSpawnRate < 3000) { // 如果处于巨波期间
+        if (rand < 0.2) { // 提高路障和铁桶概率
+            type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
+        } else if (rand < 0.5) {
+            type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
         }
+    } else { // 正常概率
+        if (rand < 0.1) {
+            type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
+        } else if (rand < 0.35) {
+            type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
+        }
+    }
+    
+    el.innerText = symbol;
+    let startX = 900;
+    let startY = r * 100 + 10;
+
+    el.style.left = startX + 'px'; el.style.top = startY + 'px';
+    board.appendChild(el);
+
+    zombies.push({ 
+        x: startX, row: r, el, hp: hp, 
+        baseSpeed: speed, speed: speed,
+        dead: false, eating: false,
+        frozenTimer: 0
+    });
+}
+
         
         setInterval(gameLoop, 20);
-        setInterval(spawnZombie, 5500); 
+        setInterval(spawnZombie, 6000); 
         setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
         // --- 冷却计时器，每 20ms 运行一次 ---
