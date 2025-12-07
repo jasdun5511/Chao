@@ -179,310 +179,323 @@
     </div>
 
     <script>
-        // --- 1. 屏幕适配脚本 (核心修复) ---
-        function resizeGame() {
-            const wrapper = document.getElementById('game-wrapper');
-            const targetWidth = 940; // 游戏本身宽度 + padding
-            const screenWidth = window.innerWidth;
-            
-            // 如果屏幕比游戏窄，就缩小
-            if (screenWidth < targetWidth) {
-                const scale = screenWidth / targetWidth;
-                wrapper.style.transform = `scale(${scale})`;
+        // --- 1. 屏幕适配脚本 (保持不变) ---
+function resizeGame() {
+    const wrapper = document.getElementById('game-wrapper');
+    const targetWidth = 940; 
+    const screenWidth = window.innerWidth;
+    
+    if (screenWidth < targetWidth) {
+        const scale = screenWidth / targetWidth;
+        wrapper.style.transform = `scale(${scale})`;
+    } else {
+        wrapper.style.transform = `scale(1)`;
+    }
+}
+window.addEventListener('resize', resizeGame);
+resizeGame();
+
+// --- 2. 游戏逻辑 (更新) ---
+const board = document.getElementById('game-board');
+const sunText = document.getElementById('sun-count');
+const scoreText = document.getElementById('score-count');
+const msgText = document.getElementById('msg');
+
+let sun = 150;
+let score = 0;
+let selection = null;
+const grid = Array(5).fill(null).map(() => Array(9).fill(null));
+const zombies = [];
+const bullets = [];
+
+// 初始化网格 UI (保持不变)
+for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 9; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.addEventListener('click', () => handleCellClick(r, c));
+        board.appendChild(cell);
+    }
+}
+
+// 更新卡片状态 (保持不变)
+function updateCards() {
+    checkCard('card-sunflower', 50);
+    checkCard('card-pea', 100);
+    checkCard('card-nut', 50);
+    checkCard('card-bomb', 150); // 检查炸弹卡
+}
+function checkCard(id, cost) {
+    const el = document.getElementById(id);
+    if (sun < cost) el.classList.add('disabled');
+    else el.classList.remove('disabled');
+}
+
+// 选择植物 (新增对 bomb 的处理)
+window.selectCard = function(type, cost) {
+    if (sun < cost) {
+        showMessage("阳光不足！", "red");
+        return;
+    }
+    selection = { type, cost };
+    
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+    document.getElementById(`card-${type}`).classList.add('active');
+    
+    document.querySelectorAll('.cell').forEach(c => c.classList.add('active-zone'));
+    showMessage(`已选择 ${type}，请点击格子`, "#fff");
+}
+
+// 点击格子种植 (保持不变)
+function handleCellClick(r, c) {
+    if (!selection) return;
+    if (grid[r][c]) {
+        showMessage("这里已经有植物了", "red");
+        return;
+    }
+    if (sun < selection.cost) return;
+
+    sun -= selection.cost;
+    sunText.innerText = sun;
+    updateCards();
+
+    createPlant(r, c, selection.type);
+
+    selection = null;
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active-zone'));
+    showMessage("种植成功！", "#4CAF50");
+}
+
+// 💥 创建植物 (新增樱桃炸弹逻辑)
+function createPlant(r, c, type) {
+    const cellIndex = r * 9 + c;
+    const cell = board.children[cellIndex];
+    
+    const el = document.createElement('div');
+    el.className = 'element';
+    
+    let hp = 5;
+    let symbol = '';
+    let plant = { r, c, hp, el, dead: false, type: type };
+
+    if (type === 'sunflower') {
+        symbol = '🌻'; hp = 4;
+        const timer = setInterval(() => {
+            if (plant.dead) { clearInterval(timer); return; }
+            sun += 25; sunText.innerText = sun; updateCards();
+            el.style.transform = "scale(1.3)";
+            setTimeout(() => el.style.transform = "scale(1)", 200);
+        }, 4000);
+    } else if (type === 'pea') {
+        symbol = '🌱'; hp = 5;
+        const timer = setInterval(() => {
+            if (plant.dead) { clearInterval(timer); return; }
+            const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+            if (hasEnemy) createBullet(r, c);
+        }, 1500);
+    } else if (type === 'nut') {
+        symbol = '🌰'; hp = 30;
+    } else if (type === 'bomb') {
+        symbol = '🍒'; hp = 1; // 炸弹生命值低，但作用是自爆
+        // 3秒后爆炸
+        setTimeout(() => {
+            if (!plant.dead) {
+                // 执行爆炸伤害
+                explode(r, c);
+                killPlant(plant); // 移除自己
+            }
+        }, 3000);
+    }
+
+    el.innerText = symbol;
+    cell.appendChild(el);
+    grid[r][c] = plant;
+}
+
+// 💣 爆炸逻辑：对周围九宫格范围内的僵尸造成巨大伤害
+function explode(r, c) {
+    showMessage("💥 B O O M ! 💥", "red");
+    
+    // 制造一个爆炸视觉效果（暂时用 emoji 替代）
+    const blast = document.createElement('div');
+    blast.innerText = '🔥';
+    blast.style.position = 'absolute';
+    blast.style.fontSize = '150px';
+    blast.style.left = c * 100 - 50 + 'px'; // 爆炸中心
+    blast.style.top = r * 100 - 50 + 'px'; 
+    blast.style.zIndex = 100;
+    board.appendChild(blast);
+
+    setTimeout(() => blast.remove(), 500); // 0.5秒后移除爆炸特效
+
+    // 遍历所有僵尸进行伤害判定
+    for (const z of zombies) {
+        if (z.dead) continue;
+        
+        // 判定范围：行 r-1 到 r+1, 列 c-1 到 c+1
+        if (z.row >= r - 1 && z.row <= r + 1) {
+            // 简单粗暴：只要在爆炸行，直接秒杀！
+            killZombie(z);
+        }
+    }
+}
+
+// 子弹逻辑 (保持不变)
+function createBullet(r, c) {
+    const el = document.createElement('div');
+    el.className = 'element bullet';
+    el.innerText = '🟢';
+    let startX = c * 100 + 50;
+    let startY = r * 100;
+    
+    el.style.left = startX + 'px';
+    el.style.top = startY + 'px'; 
+    board.appendChild(el);
+
+    bullets.push({ x: startX, y: startY, row: r, el, dead: false });
+}
+
+// 🧟 生成僵尸 (新增路障僵尸)
+function spawnZombie() {
+    const r = Math.floor(Math.random() * 5);
+    const el = document.createElement('div');
+    el.className = 'element zombie';
+    
+    // 25% 概率出现路障僵尸
+    const isConehead = Math.random() < 0.25;
+
+    let hp = 6;
+    let symbol = '🧟';
+    if (isConehead) {
+        hp = 18; // 3倍血量
+        symbol = '⛑️'; // 使用安全帽 emoji 代表路障
+    }
+    
+    el.innerText = symbol;
+    let startX = 900;
+    let startY = r * 100;
+
+    el.style.left = startX + 'px';
+    el.style.top = startY + 'px';
+    board.appendChild(el);
+
+    zombies.push({ 
+        x: startX, 
+        row: r, 
+        el, 
+        hp: hp, 
+        speed: 0.8,
+        dead: false,
+        eating: false
+    });
+}
+
+// 游戏循环、初始化、killZombie/killPlant/showMessage (保持不变或微调，请确保复制完整)
+// *... [以下代码请确保从您原先的index.html文件中完整复制] ...*
+
+// 游戏循环 (60fps)
+setInterval(gameLoop, 1000 / 60);
+// 生成僵尸循环
+setInterval(spawnZombie, 4000); 
+// 自然阳光
+setInterval(() => { sun += 25; sunText.innerText = sun; updateCards(); }, 8000);
+
+// --- 游戏循环 (请确保您的 gameLoop 是完整的) ---
+function gameLoop() {
+    // 1. 子弹逻辑 (与原版逻辑保持一致)
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += 4; 
+        b.el.style.left = b.x + 'px';
+
+        let hit = false;
+        for (const z of zombies) {
+            if (z.dead) continue;
+            if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
+                z.hp--;
+                z.el.style.opacity = 0.5;
+                setTimeout(() => z.el.style.opacity = 1, 100);
+                hit = true;
+                
+                if (z.hp <= 0) {
+                    killZombie(z);
+                }
+                break;
+            }
+        }
+
+        if (hit || b.x > 900) {
+            b.el.remove();
+            bullets.splice(i, 1);
+        }
+    }
+
+    // 2. 僵尸逻辑 (与原版逻辑保持一致)
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const z = zombies[i];
+        if (z.dead) continue;
+
+        if (!z.eating) {
+            z.x -= z.speed;
+            z.el.style.left = z.x + 'px';
+        }
+
+        const col = Math.floor((z.x + 40) / 100);
+
+        if (col >= 0 && col < 9) {
+            const plant = grid[z.row][col];
+            if (plant && !plant.dead) {
+                if (z.x < (col * 100 + 60)) {
+                    z.eating = true;
+                    if (Math.random() < 0.02) {
+                        plant.hp--;
+                        plant.el.style.opacity = 0.5;
+                        setTimeout(() => plant.el.style.opacity = 1, 100);
+                        if (plant.hp <= 0) {
+                            killPlant(plant);
+                            z.eating = false;
+                        }
+                    }
+                }
             } else {
-                wrapper.style.transform = `scale(1)`;
-            }
-        }
-        window.addEventListener('resize', resizeGame);
-        resizeGame(); // 启动时立即执行一次
-
-        // --- 2. 游戏逻辑 ---
-        
-        const board = document.getElementById('game-board');
-        const sunText = document.getElementById('sun-count');
-        const scoreText = document.getElementById('score-count');
-        const msgText = document.getElementById('msg');
-
-        let sun = 150;
-        let score = 0;
-        let selection = null; // 当前选中的植物 {type, cost}
-        
-        // 游戏数据结构：5行 x 9列
-        // grid[row][col] 存放植物对象
-        const grid = Array(5).fill(null).map(() => Array(9).fill(null));
-        const zombies = []; // 存放所有僵尸对象
-        const bullets = []; // 存放所有子弹对象
-
-        // 初始化网格 UI
-        for (let r = 0; r < 5; r++) {
-            for (let c = 0; c < 9; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.dataset.r = r;
-                cell.dataset.c = c;
-                // 点击格子的事件
-                cell.addEventListener('click', () => handleCellClick(r, c));
-                board.appendChild(cell);
+                z.eating = false;
             }
         }
 
-        // 更新卡片状态 (钱不够变灰)
-        function updateCards() {
-            checkCard('card-sunflower', 50);
-            checkCard('card-pea', 100);
-            checkCard('card-nut', 50);
+        if (z.x < -40) {
+            alert("游戏结束！");
+            location.reload();
+            return;
         }
-        function checkCard(id, cost) {
-            const el = document.getElementById(id);
-            if (sun < cost) el.classList.add('disabled');
-            else el.classList.remove('disabled');
-        }
+    }
+}
 
-        // 选择植物
-        window.selectCard = function(type, cost) {
-            if (sun < cost) {
-                showMessage("阳光不足！", "red");
-                return;
-            }
-            selection = { type, cost };
-            
-            // 高亮UI
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            if (type === 'sunflower') document.getElementById('card-sunflower').classList.add('active');
-            if (type === 'pea') document.getElementById('card-pea').classList.add('active');
-            if (type === 'nut') document.getElementById('card-nut').classList.add('active');
-            
-            // 给所有格子加个视觉提示
-            document.querySelectorAll('.cell').forEach(c => c.classList.add('active-zone'));
-            showMessage(`已选择 ${type}，请点击格子`, "#fff");
-        }
+function killZombie(z) {
+    z.dead = true;
+    z.el.remove();
+    const idx = zombies.indexOf(z);
+    if (idx > -1) zombies.splice(idx, 1);
+    score += 10;
+    scoreText.innerText = score;
+}
 
-        // 点击格子种植
-        function handleCellClick(r, c) {
-            if (!selection) return;
+function killPlant(p) {
+    p.dead = true;
+    p.el.remove();
+    grid[p.r][p.c] = null;
+}
 
-            // 检查该格子是否已有植物
-            if (grid[r][c]) {
-                showMessage("这里已经有植物了", "red");
-                return;
-            }
-            // 二次检查阳光
-            if (sun < selection.cost) return;
+function showMessage(text, color) {
+    msgText.innerText = text;
+    msgText.style.color = color;
+}
 
-            // 扣钱
-            sun -= selection.cost;
-            sunText.innerText = sun;
-            updateCards();
+updateCards();
+// ... [end of script] ...
 
-            // 生成植物
-            createPlant(r, c, selection.type);
-
-            // 清除选中状态
-            selection = null;
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.cell').forEach(c => c.classList.remove('active-zone'));
-            showMessage("种植成功！", "#4CAF50");
-        }
-
-        function createPlant(r, c, type) {
-            const cellIndex = r * 9 + c;
-            const cell = board.children[cellIndex];
-            
-            const el = document.createElement('div');
-            el.className = 'element';
-            
-            let hp = 5;
-            let symbol = '';
-
-            if (type === 'sunflower') {
-                symbol = '🌻';
-                hp = 4;
-                // 产阳光逻辑
-                const timer = setInterval(() => {
-                    if (plant.dead) { clearInterval(timer); return; }
-                    sun += 25;
-                    sunText.innerText = sun;
-                    updateCards();
-                    // 特效
-                    el.style.transform = "scale(1.3)";
-                    setTimeout(() => el.style.transform = "scale(1)", 200);
-                }, 4000);
-            } else if (type === 'pea') {
-                symbol = '🌱';
-                hp = 5;
-                // 射击逻辑
-                const timer = setInterval(() => {
-                    if (plant.dead) { clearInterval(timer); return; }
-                    // 检测该行是否有僵尸在植物右边
-                    const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-                    if (hasEnemy) {
-                        createBullet(r, c);
-                    }
-                }, 1500);
-            } else if (type === 'nut') {
-                symbol = '🌰';
-                hp = 30; // 血很厚
-            }
-
-            el.innerText = symbol;
-            cell.appendChild(el);
-
-            const plant = { r, c, hp, el, dead: false };
-            grid[r][c] = plant;
-        }
-
-        function createBullet(r, c) {
-            const el = document.createElement('div');
-            el.className = 'element bullet';
-            el.innerText = '🟢';
-            // 初始位置：植物所在的格子的像素位置
-            // 格子宽度100，所以 left = c * 100 + 50
-            let startX = c * 100 + 50;
-            let startY = r * 100;
-            
-            el.style.left = startX + 'px';
-            el.style.top = startY + 'px'; // 这里的top是相对于board的
-            
-            // 为了让bullet相对于board定位，我们需要手动设置
-            // 但因为我们用了 grid 布局，最好直接 append 到 board 并绝对定位
-            board.appendChild(el);
-
-            bullets.push({ x: startX, y: startY, row: r, el, dead: false });
-        }
-
-        function spawnZombie() {
-            const r = Math.floor(Math.random() * 5);
-            const el = document.createElement('div');
-            el.className = 'element zombie';
-            el.innerText = '🧟';
-            
-            let startX = 900;
-            let startY = r * 100;
-
-            el.style.left = startX + 'px';
-            el.style.top = startY + 'px';
-            board.appendChild(el);
-
-            zombies.push({ 
-                x: startX, 
-                row: r, 
-                el, 
-                hp: 6, 
-                speed: 0.8, // 移动速度
-                dead: false,
-                eating: false // 是否正在吃植物
-            });
-        }
-        
-        // 游戏循环 (60fps)
-        setInterval(gameLoop, 1000 / 60);
-        // 生成僵尸循环
-        setInterval(spawnZombie, 4000); // 每4秒一只
-        // 自然阳光
-        setInterval(() => { sun += 25; sunText.innerText = sun; updateCards(); }, 8000);
-
-        function gameLoop() {
-            // 1. 子弹逻辑
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const b = bullets[i];
-                b.x += 4; // 子弹速度
-                b.el.style.left = b.x + 'px';
-
-                // 碰撞检测
-                let hit = false;
-                for (const z of zombies) {
-                    if (z.dead) continue;
-                    // 同一行，且子弹碰到了僵尸 (简单的矩形碰撞)
-                    if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
-                        z.hp--;
-                        z.el.style.opacity = 0.5;
-                        setTimeout(() => z.el.style.opacity = 1, 100);
-                        hit = true;
-                        
-                        if (z.hp <= 0) {
-                            killZombie(z);
-                        }
-                        break;
-                    }
-                }
-
-                if (hit || b.x > 900) {
-                    b.el.remove();
-                    bullets.splice(i, 1);
-                }
-            }
-
-            // 2. 僵尸逻辑
-            for (let i = zombies.length - 1; i >= 0; i--) {
-                const z = zombies[i];
-                if (z.dead) continue;
-
-                // 只有当没在吃植物时才移动
-                if (!z.eating) {
-                    z.x -= z.speed;
-                    z.el.style.left = z.x + 'px';
-                }
-
-                // 计算僵尸目前在哪一列
-                // 格子中心点检测
-                const col = Math.floor((z.x + 40) / 100);
-
-                // 吃植物判定
-                if (col >= 0 && col < 9) {
-                    const plant = grid[z.row][col];
-                    if (plant && !plant.dead) {
-                        // 碰到了植物！
-                        // 简单判断：如果僵尸中心进入了格子中心范围
-                        if (z.x < (col * 100 + 60)) {
-                            z.eating = true;
-                            // 伤害植物 (每60帧扣一次血，大概1秒一次)
-                            if (Math.random() < 0.02) {
-                                plant.hp--;
-                                plant.el.style.opacity = 0.5;
-                                setTimeout(() => plant.el.style.opacity = 1, 100);
-                                if (plant.hp <= 0) {
-                                    killPlant(plant);
-                                    z.eating = false; // 吃完了，继续走
-                                }
-                            }
-                        }
-                    } else {
-                        z.eating = false; // 没植物了，继续走
-                    }
-                }
-
-                // 输掉游戏
-                if (z.x < -40) {
-                    alert("游戏结束！");
-                    location.reload();
-                    return; // 停止循环
-                }
-            }
-        }
-
-        function killZombie(z) {
-            z.dead = true;
-            z.el.remove();
-            // 从数组移除
-            const idx = zombies.indexOf(z);
-            if (idx > -1) zombies.splice(idx, 1);
-            score += 10;
-            scoreText.innerText = score;
-        }
-
-        function killPlant(p) {
-            p.dead = true;
-            p.el.remove();
-            grid[p.r][p.c] = null;
-        }
-
-        function showMessage(text, color) {
-            msgText.innerText = text;
-            msgText.style.color = color;
-        }
-
-        // 初始化更新一次卡片状态
-        updateCards();
 
     </script>
 </body>
