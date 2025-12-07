@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>植物大战姜丝炒肉</title>
+    <title>植物大战姜丝炒肉 - 带冷却时间</title>
     <style>
         /* --- CSS 样式部分 --- */
         body {
@@ -73,17 +73,34 @@
             background: #9aa; border: 3px solid #555; border-radius: 5px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative; cursor: pointer; transition: transform 0.1s;
+            overflow: hidden; /* 确保冷却条不会溢出 */
         }
         .card.active { 
             border-color: #FFD700; background: #fff; 
             box-shadow: 0 0 15px #FFD700; transform: scale(1.1); z-index: 10;
         }
+        /* 冷却中的样式 */
+        .card.cooling {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transition: none;
+        }
+        .card-cooldown-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            transition: height 0.02s linear; /* 平滑过渡 */
+            z-index: 5;
+        }
         .card.disabled::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); border-radius: 3px;
+            z-index: 6; /* 确保它在冷却条之上，但植物元素之下 */
         }
-        .card-emoji { font-size: 38px; }
-        .card-cost { font-size: 14px; font-weight: bold; color: #000; margin-top: 5px; }
+        .card-emoji { font-size: 38px; position: relative; z-index: 7;}
+        .card-cost { font-size: 14px; font-weight: bold; color: #000; margin-top: 5px; position: relative; z-index: 7; }
 
         #game-board {
             position: relative;
@@ -102,7 +119,6 @@
         .cell { width: 100px; height: 100px; border: 1px solid rgba(255,255,255,0.05); }
         .cell.active-zone { background-color: rgba(255, 255, 255, 0.3); cursor: pointer; }
 
-        /* 修复：将 plant/zombie/bullet 的绝对定位原点统一到 #game-board */
         .element {
             position: absolute; 
             width: 80px; 
@@ -111,7 +127,6 @@
             align-items: center; 
             justify-content: center;
             font-size: 55px; 
-            /* 移除 left: 10px; top: 10px; 让 JS 来控制精确位置 */
             pointer-events: none; 
             z-index: 10;
         }
@@ -164,7 +179,7 @@
 <body>
 
     <div id="game-wrapper">
-        <h1>🌻 植物大战姜丝炒肉 🐷</h1>
+        <h1>🌻 植物大战姜丝炒肉 (带冷却时间 V4) 🐷</h1>
         
         <div class="top-area">
             <div class="header">
@@ -182,22 +197,27 @@
             <div class="card" id="card-sunflower" onclick="selectCard('sunflower', 50)">
                 <div class="card-emoji">🌻</div>
                 <div class="card-cost">50</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
             </div>
             <div class="card" id="card-pea" onclick="selectCard('pea', 100)">
                 <div class="card-emoji">🌱</div>
                 <div class="card-cost">100</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
             </div>
             <div class="card" id="card-ice" onclick="selectCard('ice', 175)">
                 <div class="card-emoji">🧊</div>
                 <div class="card-cost">175</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
             </div>
             <div class="card" id="card-nut" onclick="selectCard('nut', 50)">
                 <div class="card-emoji">🌰</div>
                 <div class="card-cost">50</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
             </div>
             <div class="card" id="card-bomb" onclick="selectCard('bomb', 150)">
                 <div class="card-emoji">🍒</div>
                 <div class="card-cost">150</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
             </div>
         </div>
 
@@ -214,7 +234,7 @@
                         <div class="info-icon">🌻</div>
                         <div class="info-text">
                             <h4>向日葵 (Sunflower)</h4>
-                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 4</span></div>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">冷却: 5秒</span></div>
                             <p>每隔 3 秒生产 25 点阳光。</p>
                         </div>
                     </div>
@@ -222,7 +242,7 @@
                         <div class="info-icon">🌱</div>
                         <div class="info-text">
                             <h4>豌豆射手 (Peashooter)</h4>
-                            <div><span class="stat-tag">花费: 100</span><span class="stat-tag">生命: 5</span></div>
+                            <div><span class="stat-tag">花费: 100</span><span class="stat-tag">冷却: 7秒</span></div>
                             <p>发射直线豌豆攻击敌人。</p>
                         </div>
                     </div>
@@ -230,7 +250,7 @@
                         <div class="info-icon">🧊</div>
                         <div class="info-text">
                             <h4>寒冰射手 (Snow Pea)</h4>
-                            <div><span class="stat-tag">花费: 175</span><span class="stat-tag">生命: 5</span></div>
+                            <div><span class="stat-tag">花费: 175</span><span class="stat-tag">冷却: 7秒</span></div>
                             <p>发射冰豌豆，使敌人<b>减速 50%</b>。</p>
                         </div>
                     </div>
@@ -238,7 +258,7 @@
                         <div class="info-icon">🌰</div>
                         <div class="info-text">
                             <h4>坚果墙 (Wall-nut)</h4>
-                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 40</span></div>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">冷却: 10秒</span></div>
                             <p>防御大师，阻挡敌人的前进。</p>
                         </div>
                     </div>
@@ -246,7 +266,7 @@
                         <div class="info-icon">🍒</div>
                         <div class="info-text">
                             <h4>樱桃炸弹 (Cherry Bomb)</h4>
-                            <div><span class="stat-tag">花费: 150</span><span class="stat-tag">范围: 3x3</span></div>
+                            <div><span class="stat-tag">花费: 150</span><span class="stat-tag">冷却: 30秒</span></div>
                             <p>2秒后爆炸，秒杀范围内的敌人。</p>
                         </div>
                     </div>
@@ -312,7 +332,15 @@
         const zombies = []; 
         const bullets = []; 
 
-        // 初始化网格 - 保持不变
+        // --- 新增：卡片冷却状态 ---
+        const cardCooldowns = {
+            'sunflower': { time: 5000, remaining: 0, el: document.getElementById('card-sunflower') },
+            'pea': { time: 7000, remaining: 0, el: document.getElementById('card-pea') },
+            'ice': { time: 7000, remaining: 0, el: document.getElementById('card-ice') },
+            'nut': { time: 10000, remaining: 0, el: document.getElementById('card-nut') },
+            'bomb': { time: 30000, remaining: 0, el: document.getElementById('card-bomb') }
+        };
+
         for (let r = 0; r < 5; r++) {
             for (let c = 0; c < 9; c++) {
                 const cell = document.createElement('div');
@@ -325,7 +353,7 @@
             }
         }
 
-        const STORAGE_KEY = 'pvz_pork_scores_v2'; 
+        const STORAGE_KEY = 'pvz_pork_scores_v3'; // 更新排行榜版本
         function loadScores() {
             const savedScores = localStorage.getItem(STORAGE_KEY);
             return savedScores ? JSON.parse(savedScores) : [];
@@ -353,21 +381,41 @@
         }
 
         function updateCards() {
-            checkCard('card-sunflower', 50);
-            checkCard('card-pea', 100);
-            checkCard('card-ice', 175);
-            checkCard('card-nut', 50);
-            checkCard('card-bomb', 150);
-        }
-        function checkCard(id, cost) {
-            const el = document.getElementById(id);
-            if (sun < cost) el.classList.add('disabled');
-            else el.classList.remove('disabled');
+            for (const type in cardCooldowns) {
+                const cd = cardCooldowns[type];
+                const cardEl = cd.el;
+                const cost = parseInt(cardEl.querySelector('.card-cost').innerText);
+                
+                // 1. 检查阳光和冷却时间
+                const isDisabled = sun < cost || cd.remaining > 0;
+
+                // 2. 更新冷却条
+                const cdBar = cardEl.querySelector('.card-cooldown-bar');
+                if (cd.remaining > 0) {
+                    const percentage = (cd.remaining / cd.time) * 100;
+                    cdBar.style.height = `${percentage}%`;
+                    cardEl.classList.add('cooling');
+                } else {
+                    cdBar.style.height = '0';
+                    cardEl.classList.remove('cooling');
+                }
+
+                // 3. 更新阳光不足状态
+                if (sun < cost) {
+                    cardEl.classList.add('disabled');
+                } else {
+                    cardEl.classList.remove('disabled');
+                }
+            }
         }
 
         window.selectCard = function(type, cost) {
             if (!gameActive) return;
+            
+            const cd = cardCooldowns[type];
+            if (cd.remaining > 0) { showMessage("卡片冷却中！", "orange"); return; }
             if (sun < cost) { showMessage("阳光不足！", "red"); return; }
+            
             selection = { type, cost };
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
             document.getElementById(`card-${type}`).classList.add('active');
@@ -378,12 +426,22 @@
         function handleCellClick(r, c) {
             if (!gameActive || !selection) return;
             if (grid[r][c]) { showMessage("此地已有植物", "red"); return; }
-            if (sun < selection.cost) return;
+            
+            const type = selection.type;
+            const cost = selection.cost;
+            
+            // 再次检查冷却和阳光，以防点击卡片后状态改变
+            const cd = cardCooldowns[type];
+            if (cd.remaining > 0) return;
+            if (sun < cost) return;
 
-            sun -= selection.cost;
+            // 扣费并开始冷却
+            sun -= cost;
+            cd.remaining = cd.time; 
             sunText.innerText = sun;
             updateCards();
-            createPlant(r, c, selection.type);
+
+            createPlant(r, c, type);
             
             selection = null;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
@@ -392,15 +450,11 @@
         }
 
         function createPlant(r, c, type) {
-            // 关键修复：植物也直接添加到 board，并用 left/top 定位
-            // const cell = document.getElementById(`cell-${r}-${c}`); <--- 不再需要这个DOM元素来包含植物
-            
             const el = document.createElement('div');
             el.className = 'element';
             
-            // 统一绝对定位：设置植物的像素位置
-            el.style.left = c * 100 + 10 + 'px'; // 10px 是居中微调
-            el.style.top = r * 100 + 10 + 'px'; // 10px 是居中微调
+            el.style.left = c * 100 + 10 + 'px';
+            el.style.top = r * 100 + 10 + 'px';
             
             let hp = 5;
             let symbol = '';
@@ -436,7 +490,6 @@
             }
 
             el.innerText = symbol;
-            // 关键修复：植物添加到 board
             board.appendChild(el);
             grid[r][c] = plant;
         }
@@ -445,9 +498,8 @@
             const el = document.createElement('div');
             el.className = 'element bullet';
             el.innerText = isIce ? '🔵' : '🟢';
-            // 确保子弹定位准确
             let startX = c * 100 + 50;
-            let startY = r * 100 + 40; // 40px 是微调
+            let startY = r * 100 + 40;
             el.style.left = startX + 'px';
             el.style.top = startY + 'px'; 
             board.appendChild(el);
@@ -459,7 +511,6 @@
             const blast = document.createElement('div');
             blast.innerText = '🔥';
             blast.style.position = 'absolute'; blast.style.fontSize = '150px';
-            // 确保爆炸效果定位准确
             blast.style.left = c * 100 - 50 + 'px'; 
             blast.style.top = r * 100 - 50 + 'px'; 
             blast.style.zIndex = 100;
@@ -494,7 +545,7 @@
             
             el.innerText = symbol;
             let startX = 900;
-            let startY = r * 100 + 10; // 10px 是微调，与植物对齐
+            let startY = r * 100 + 10;
 
             el.style.left = startX + 'px'; el.style.top = startY + 'px';
             board.appendChild(el);
@@ -511,6 +562,20 @@
         setInterval(spawnZombie, 3000); 
         setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
+        // --- 冷却计时器，每 20ms 运行一次 ---
+        const COOLDOWN_TICK = 20; 
+        setInterval(() => {
+            if (!gameActive) return;
+            for (const type in cardCooldowns) {
+                const cd = cardCooldowns[type];
+                if (cd.remaining > 0) {
+                    cd.remaining = Math.max(0, cd.remaining - COOLDOWN_TICK);
+                }
+            }
+            updateCards();
+        }, COOLDOWN_TICK);
+
+
         function gameLoop() {
             if (!gameActive) return;
 
@@ -522,7 +587,6 @@
                 let hit = false;
                 for (const z of zombies) {
                     if (z.dead) continue;
-                    // 碰撞检测逻辑保持不变
                     if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
                         z.hp--;
                         if (b.isIce) {
@@ -576,7 +640,7 @@
                 if (z.x < -40) {
                     gameActive = false;
                     saveScore(score);
-                    alert(`🧠 游戏结束！\n你的脑子被姜丝炒肉吃了。\n最终得分: ${score}`);
+                    alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
                     location.reload();
                     return;
                 }
