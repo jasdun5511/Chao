@@ -467,7 +467,7 @@
                     sun += 25; sunText.innerText = sun; updateCards();
                     el.style.transform = "scale(1.3)";
                     setTimeout(() => el.style.transform = "scale(1)", 200);
-                }, 3000);
+                }, 4000);
             } else if (type === 'pea') {
                 symbol = '🌱'; hp = 5;
                 const timer = setInterval(() => {
@@ -559,7 +559,7 @@
         }
         
         setInterval(gameLoop, 20);
-        setInterval(spawnZombie, 3750); 
+        setInterval(spawnZombie, 4500); 
         setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
         // --- 冷却计时器，每 20ms 运行一次 ---
