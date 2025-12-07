@@ -485,7 +485,7 @@
             } else if (type === 'nut') {
                 symbol = '🌰'; hp = 150;
             } else if (type === 'bomb') {
-                symbol = '🍒'; hp = 1;
+                symbol = '🍒'; hp = 1000;
                 setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
             }
 
