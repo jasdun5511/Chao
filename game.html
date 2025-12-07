@@ -3,32 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>植物大战僵尸 - 排行榜减速版</title>
+    <title>植物大战姜丝炒肉 - 图鉴加强版</title>
     <style>
-        /* --- CSS 样式部分 --- */
+        /* --- CSS 样式部分 (保持不变) --- */
         body {
             background-color: #222;
             color: white;
-            font-family: sans-serif;
+            font-family: 'Microsoft YaHei', sans-serif;
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            overflow-x: hidden; 
             display: flex;
             flex-direction: column;
             align-items: center;
             touch-action: none;
         }
 
-        /* 游戏容器：用于整体缩放 */
         #game-wrapper {
             transform-origin: top center;
             width: 920px;
             padding-bottom: 20px;
         }
 
-        h1 { text-align: center; margin: 10px 0; font-size: 24px; text-shadow: 2px 2px 0 #000; }
+        /* 修改了H1标题颜色，使其更像“肉”色一点 */
+        h1 { text-align: center; margin: 15px 0; font-size: 28px; text-shadow: 2px 2px 0 #000; color: #FF9800; }
 
-        /* 顶部UI & 排行榜区域布局 */
         .top-area {
             display: flex;
             justify-content: space-between;
@@ -44,109 +43,123 @@
             padding: 10px 20px;
             border-radius: 10px;
             border: 2px solid #666;
-            width: 350px; /* 调整宽度 */
+            width: 350px;
+            align-items: center;
         }
-        .sun { color: #FFD700; }
+        .sun { color: #FFD700; font-weight: bold; }
 
-        /* --- 排行榜样式 --- */
         #leaderboard {
             width: 250px;
-            background: #111;
+            background: #1a1a1a;
             padding: 10px;
             border-radius: 10px;
             border: 2px solid #555;
             text-align: left;
         }
-        #leaderboard h2 { font-size: 18px; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; color: #FFD700; }
-        #leaderboard ol { list-style: none; padding: 0; margin: 0; }
-        #leaderboard li { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+        #leaderboard h2 { font-size: 16px; margin: 0 0 5px 0; color: #FFD700; border-bottom: 1px solid #444; }
+        #leaderboard ol { padding-left: 25px; margin: 0; font-size: 14px; color: #ccc; }
+        #leaderboard li { margin-bottom: 3px; }
 
-        /* 卡片槽 */
         .seed-bank {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 10px;
             background: rgba(0,0,0,0.3);
             padding: 10px;
             border-radius: 10px;
         }
         .card {
-            width: 70px;
-            height: 90px;
-            background: #9aa;
-            border: 3px solid #555;
-            border-radius: 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            width: 75px; height: 95px;
+            background: #9aa; border: 3px solid #555; border-radius: 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; cursor: pointer; transition: transform 0.1s;
         }
         .card.active { 
-            border-color: #FFD700; 
-            background: #fff; 
-            box-shadow: 0 0 15px #FFD700;
-            transform: scale(1.1);
+            border-color: #FFD700; background: #fff; 
+            box-shadow: 0 0 15px #FFD700; transform: scale(1.1); z-index: 10;
         }
         .card.disabled::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            border-radius: 3px;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); border-radius: 3px;
         }
-        .card-emoji { font-size: 35px; }
-        .card-cost { font-size: 14px; font-weight: bold; color: #000; }
+        .card-emoji { font-size: 38px; }
+        .card-cost { font-size: 14px; font-weight: bold; color: #000; margin-top: 5px; }
 
-        /* 核心网格地图 */
         #game-board {
             position: relative;
-            width: 900px;
-            height: 500px;
+            width: 900px; height: 500px;
             background-color: #4CAF50;
-            border: 10px solid #3e2723;
-            border-radius: 8px;
+            border: 10px solid #3e2723; border-radius: 8px;
             display: grid;
-            grid-template-rows: repeat(5, 100px);
-            grid-template-columns: repeat(9, 100px);
+            grid-template-rows: repeat(5, 100px); grid-template-columns: repeat(9, 100px);
             background-image: 
                 linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C),
                 linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C);
-            background-size: 200px 200px;
-            background-position: 0 0, 100px 100px;
+            background-size: 200px 200px; background-position: 0 0, 100px 100px;
             overflow: hidden; 
         }
 
-        .cell {
-            width: 100px; height: 100px; position: relative;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .cell.active-zone {
-            background-color: rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-        }
+        .cell { width: 100px; height: 100px; border: 1px solid rgba(255,255,255,0.05); }
+        .cell.active-zone { background-color: rgba(255, 255, 255, 0.3); cursor: pointer; }
 
-        /* 游戏元素 */
         .element {
             position: absolute; width: 80px; height: 80px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 50px; left: 10px; top: 10px;
+            font-size: 55px; left: 10px; top: 10px;
             pointer-events: none; z-index: 10;
         }
-
         .zombie { z-index: 20; transition: transform 0.05s linear; }
+        .zombie.frozen { filter: hue-rotate(180deg) brightness(1.2); }
         
-        .bullet { font-size: 20px; width: 20px; height: 20px; z-index: 15; left: 50px; top: 40px; }
+        .bullet { font-size: 24px; width: 20px; height: 20px; z-index: 15; left: 50px; top: 40px; }
 
-        #msg { text-align: center; height: 20px; color: #ffeb3b; margin-top: 5px; }
+        #msg { text-align: center; height: 20px; color: #ffeb3b; margin-top: 5px; font-weight: bold; }
+
+        #encyclopedia {
+            margin-top: 30px;
+            width: 900px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #encyclopedia h2 { border-bottom: 2px solid #888; padding-bottom: 10px; margin-top: 0; color: #FF9800; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .info-section h3 { color: #4CAF50; margin-bottom: 10px; }
+        /* 修改了右侧标题颜色 */
+        .info-section h3.zombie-title { color: #FF9800; }
+
+        .info-card {
+            display: flex;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            align-items: center;
+        }
+        .info-icon { font-size: 40px; width: 60px; text-align: center; margin-right: 15px; }
+        .info-text h4 { margin: 0; color: #FFD700; font-size: 16px; }
+        .info-text p { margin: 5px 0 0 0; font-size: 13px; color: #ccc; line-height: 1.4; }
+        .stat-tag { 
+            display: inline-block; background: #555; color: white; 
+            padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px; 
+        }
 
     </style>
 </head>
 <body>
 
     <div id="game-wrapper">
-        <h1>🌻 植物大战僵尸 🧟</h1>
+        <h1>🌻 植物大战姜丝炒肉 (正式版) 🐷</h1>
         
         <div class="top-area">
             <div class="header">
@@ -155,9 +168,8 @@
             </div>
             
             <div id="leaderboard">
-                <h2>🏆 排行榜</h2>
-                <ol id="scores-list">
-                    </ol>
+                <h2>🏆 炒肉大厨榜 (前5名)</h2>
+                <ol id="scores-list"></ol>
             </div>
         </div>
 
@@ -170,6 +182,10 @@
                 <div class="card-emoji">🌱</div>
                 <div class="card-cost">100</div>
             </div>
+            <div class="card" id="card-ice" onclick="selectCard('ice', 175)">
+                <div class="card-emoji">🧊</div>
+                <div class="card-cost">175</div>
+            </div>
             <div class="card" id="card-nut" onclick="selectCard('nut', 50)">
                 <div class="card-emoji">🌰</div>
                 <div class="card-cost">50</div>
@@ -180,9 +196,86 @@
             </div>
         </div>
 
-        <div id="msg">点击植物卡片，然后在网格中种植</div>
+        <div id="msg">欢迎！请选择植物卡片开始游戏</div>
 
         <div id="game-board"></div>
+
+        <div id="encyclopedia">
+            <h2>📖 游戏图鉴</h2>
+            <div class="info-grid">
+                <div class="info-section">
+                    <h3>🌱 植物阵营</h3>
+                    <div class="info-card">
+                        <div class="info-icon">🌻</div>
+                        <div class="info-text">
+                            <h4>向日葵 (Sunflower)</h4>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 4</span></div>
+                            <p>后勤保障。每隔 4 秒生产 25 点阳光。建议种在最左边。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🌱</div>
+                        <div class="info-text">
+                            <h4>豌豆射手 (Peashooter)</h4>
+                            <div><span class="stat-tag">花费: 100</span><span class="stat-tag">生命: 5</span></div>
+                            <p>主要火力。发射直线豌豆攻击敌人。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🧊</div>
+                        <div class="info-text">
+                            <h4>寒冰射手 (Snow Pea)</h4>
+                            <div><span class="stat-tag">花费: 175</span><span class="stat-tag">生命: 5</span></div>
+                            <p>控制型火力。发射冰豌豆，造成伤害并使敌人<b>减速 50%</b>。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🌰</div>
+                        <div class="info-text">
+                            <h4>坚果墙 (Wall-nut)</h4>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">生命: 40</span></div>
+                            <p>防御大师。拥有极高的生命值，用来阻挡敌人的前进。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🍒</div>
+                        <div class="info-text">
+                            <h4>樱桃炸弹 (Cherry Bomb)</h4>
+                            <div><span class="stat-tag">花费: 150</span><span class="stat-tag">范围: 3x3</span></div>
+                            <p>一次性植物。种下 3 秒后爆炸，秒杀周围所有敌人。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3 class="zombie-title">🐷 姜丝炒肉军团</h3>
+                    <div class="info-card">
+                        <div class="info-icon">🐷</div>
+                        <div class="info-text">
+                            <h4>普通姜丝炒肉 (Pork)</h4>
+                            <div><span class="stat-tag">生命: 6</span><span class="stat-tag">速度: 普通</span></div>
+                            <p>最常见的食材，虽然弱小但数量众多。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">⛑️</div>
+                        <div class="info-text">
+                            <h4>路障姜丝炒肉 (Conehead)</h4>
+                            <div><span class="stat-tag">生命: 18</span><span class="stat-tag">速度: 较慢</span></div>
+                            <p>戴着交通锥的猪猪，生命值是普通的 3 倍。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">👺</div>
+                        <div class="info-text">
+                            <h4>铁桶姜丝炒肉 (Buckethead)</h4>
+                            <div><span class="stat-tag" style="background:#d32f2f">生命: 35</span><span class="stat-tag">速度: 较慢</span></div>
+                            <p><b>危险！</b>戴着铁桶，防御力极高。需要集中火力。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -191,7 +284,6 @@
             const wrapper = document.getElementById('game-wrapper');
             const targetWidth = 940; 
             const screenWidth = window.innerWidth;
-            
             if (screenWidth < targetWidth) {
                 const scale = screenWidth / targetWidth;
                 wrapper.style.transform = `scale(${scale})`;
@@ -202,8 +294,7 @@
         window.addEventListener('resize', resizeGame);
         resizeGame();
 
-        // --- 2. 游戏核心逻辑 ---
-        
+        // --- 2. 游戏核心数据 ---
         const board = document.getElementById('game-board');
         const sunText = document.getElementById('sun-count');
         const scoreText = document.getElementById('score-count');
@@ -212,7 +303,7 @@
         let sun = 150;
         let score = 0;
         let selection = null;
-        let gameActive = true; // 新增游戏状态变量
+        let gameActive = true;
         
         const grid = Array(5).fill(null).map(() => Array(9).fill(null));
         const zombies = []; 
@@ -231,58 +322,38 @@
         }
 
         // --- 3. 排行榜逻辑 ---
-
-        const STORAGE_KEY = 'pvz_high_scores';
-
+        const STORAGE_KEY = 'pvz_pork_scores'; // 修改了存储KEY，新榜单
         function loadScores() {
             const savedScores = localStorage.getItem(STORAGE_KEY);
             return savedScores ? JSON.parse(savedScores) : [];
         }
-
         function saveScore(newScore) {
             let scores = loadScores();
-            
-            // 如果得分低于当前前5名的最低分，则不记录 (或者排行榜未满5人)
-            if (scores.length >= 5 && newScore < scores[scores.length - 1].score) {
-                return;
-            }
-
-            const playerName = prompt(`恭喜你获得 ${newScore} 分！请输入你的名字：`, "玩家") || "匿名玩家";
-
+            if (scores.length >= 5 && newScore < scores[scores.length - 1].score) return;
+            const playerName = prompt(`游戏结束！得分: ${newScore}\n请输入大厨名字上榜：`, "大厨") || "匿名大厨";
             scores.push({ name: playerName, score: newScore });
-            
-            // 排序 (降序)
             scores.sort((a, b) => b.score - a.score);
-            
-            // 只保留前 5 名
             scores = scores.slice(0, 5);
-
             localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
             displayLeaderboard();
         }
-
         function displayLeaderboard() {
             const scoresList = document.getElementById('scores-list');
             const scores = loadScores();
             scoresList.innerHTML = '';
-
-            if (scores.length === 0) {
-                scoresList.innerHTML = '<li>暂无记录</li>';
-                return;
-            }
-
+            if (scores.length === 0) scoresList.innerHTML = '<li>暂无记录</li>';
             scores.forEach((item, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${index + 1}. ${item.name}</span> <span>${item.score}</span>`;
+                li.innerHTML = `<span>#${index + 1} ${item.name}</span> <span style="color:#FFD700">${item.score}</span>`;
                 scoresList.appendChild(li);
             });
         }
-        
-        // --- 4. 游戏功能函数 (更新) ---
 
+        // --- 4. 游戏操作逻辑 (保持不变) ---
         function updateCards() {
             checkCard('card-sunflower', 50);
             checkCard('card-pea', 100);
+            checkCard('card-ice', 175);
             checkCard('card-nut', 50);
             checkCard('card-bomb', 150);
         }
@@ -294,33 +365,24 @@
 
         window.selectCard = function(type, cost) {
             if (!gameActive) return;
-            if (sun < cost) {
-                showMessage("阳光不足！", "red");
-                return;
-            }
+            if (sun < cost) { showMessage("阳光不足！", "red"); return; }
             selection = { type, cost };
-            
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
             document.getElementById(`card-${type}`).classList.add('active');
-            
             document.querySelectorAll('.cell').forEach(c => c.classList.add('active-zone'));
-            showMessage(`已选择 ${type}，请点击格子`, "#fff");
+            showMessage(`已选择 ${type}`, "#fff");
         }
 
         function handleCellClick(r, c) {
             if (!gameActive || !selection) return;
-            if (grid[r][c]) {
-                showMessage("这里已经有植物了", "red");
-                return;
-            }
+            if (grid[r][c]) { showMessage("此地已有植物", "red"); return; }
             if (sun < selection.cost) return;
 
             sun -= selection.cost;
             sunText.innerText = sun;
             updateCards();
-
             createPlant(r, c, selection.type);
-
+            
             selection = null;
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.cell').forEach(c => c.classList.remove('active-zone'));
@@ -330,7 +392,6 @@
         function createPlant(r, c, type) {
             const cellIndex = r * 9 + c;
             const cell = board.children[cellIndex];
-            
             const el = document.createElement('div');
             el.className = 'element';
             
@@ -351,18 +412,20 @@
                 const timer = setInterval(() => {
                     if (plant.dead) { clearInterval(timer); return; }
                     const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-                    if (hasEnemy) createBullet(r, c);
+                    if (hasEnemy) createBullet(r, c, false);
+                }, 1500);
+            } else if (type === 'ice') {
+                symbol = '🧊'; hp = 5;
+                const timer = setInterval(() => {
+                    if (plant.dead) { clearInterval(timer); return; }
+                    const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                    if (hasEnemy) createBullet(r, c, true);
                 }, 1500);
             } else if (type === 'nut') {
-                symbol = '🌰'; hp = 30;
+                symbol = '🌰'; hp = 40;
             } else if (type === 'bomb') {
                 symbol = '🍒'; hp = 1;
-                setTimeout(() => {
-                    if (!plant.dead) {
-                        explode(r, c);
-                        killPlant(plant);
-                    }
-                }, 3000);
+                setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 3000);
             }
 
             el.innerText = symbol;
@@ -370,123 +433,113 @@
             grid[r][c] = plant;
         }
 
+        function createBullet(r, c, isIce) {
+            const el = document.createElement('div');
+            el.className = 'element bullet';
+            el.innerText = isIce ? '🔵' : '🟢';
+            let startX = c * 100 + 50;
+            let startY = r * 100;
+            el.style.left = startX + 'px';
+            el.style.top = startY + 'px'; 
+            board.appendChild(el);
+            bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: isIce });
+        }
+
         function explode(r, c) {
-            showMessage("💥 B O O M ! 💥", "red");
-            
+            showMessage("💥 BOOM! 💥", "red");
             const blast = document.createElement('div');
             blast.innerText = '🔥';
-            blast.style.position = 'absolute';
-            blast.style.fontSize = '150px';
-            blast.style.left = c * 100 - 50 + 'px';
-            blast.style.top = r * 100 - 50 + 'px'; 
-            blast.style.zIndex = 100;
+            blast.style.position = 'absolute'; blast.style.fontSize = '150px';
+            blast.style.left = c * 100 - 50 + 'px'; blast.style.top = r * 100 - 50 + 'px'; blast.style.zIndex = 100;
             board.appendChild(blast);
-
             setTimeout(() => blast.remove(), 500);
 
             for (const z of zombies) {
                 if (z.dead) continue;
-                if (z.row >= r - 1 && z.row <= r + 1) {
+                if (z.row >= r - 1 && z.row <= r + 1 && z.x > (c-2)*100 && z.x < (c+2)*100) {
                     killZombie(z);
                 }
             }
         }
 
-        function createBullet(r, c) {
-            const el = document.createElement('div');
-            el.className = 'element bullet';
-            el.innerText = '🟢';
-            let startX = c * 100 + 50;
-            let startY = r * 100;
-            
-            el.style.left = startX + 'px';
-            el.style.top = startY + 'px'; 
-            board.appendChild(el);
-
-            bullets.push({ x: startX, y: startY, row: r, el, dead: false });
-        }
-
+        // --- 生成姜丝炒肉 (已更新图标) ---
         function spawnZombie() {
             if (!gameActive) return;
             const r = Math.floor(Math.random() * 5);
             const el = document.createElement('div');
             el.className = 'element zombie';
             
-            const isConehead = Math.random() < 0.25;
-
+            const rand = Math.random();
+            let type = 'normal';
             let hp = 6;
-            let speed = 0.8; // 基础速度
-            let symbol = '🧟';
-            if (isConehead) {
-                hp = 18;
-                speed = 0.6; // 路障稍微慢一点
-                symbol = '⛑️';
+            let speed = 0.6; 
+            // 修改了这里的默认图标为猪
+            let symbol = '🐷';
+
+            if (rand < 0.1) { // 10% 铁桶
+                type = 'bucket'; hp = 35; speed = 0.5; symbol = '👺'; 
+            } else if (rand < 0.35) { // 25% 路障
+                type = 'cone'; hp = 18; speed = 0.6; symbol = '⛑️';
             }
             
             el.innerText = symbol;
             let startX = 900;
             let startY = r * 100;
 
-            el.style.left = startX + 'px';
-            el.style.top = startY + 'px';
+            el.style.left = startX + 'px'; el.style.top = startY + 'px';
             board.appendChild(el);
 
             zombies.push({ 
-                x: startX, 
-                row: r, 
-                el, 
-                hp: hp, 
-                speed: speed, // 使用新的速度变量
-                dead: false,
-                eating: false
+                x: startX, row: r, el, hp: hp, 
+                baseSpeed: speed, speed: speed,
+                dead: false, eating: false,
+                frozenTimer: 0
             });
         }
         
-        // 游戏循环 (40 FPS，即 25ms 刷新一次)
+        // --- 5. 游戏主循环 (25ms) (保持不变) ---
         setInterval(gameLoop, 25);
-        // 生成僵尸循环
         setInterval(spawnZombie, 4000); 
-        // 自然阳光
-        setInterval(() => { 
-            if (!gameActive) return;
-            sun += 25; sunText.innerText = sun; updateCards(); 
-        }, 8000);
+        setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 8000);
 
         function gameLoop() {
             if (!gameActive) return;
 
-            // 1. 子弹逻辑
+            // 子弹逻辑
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i];
-                b.x += 4; 
-                b.el.style.left = b.x + 'px';
-
+                b.x += 4; b.el.style.left = b.x + 'px';
                 let hit = false;
                 for (const z of zombies) {
                     if (z.dead) continue;
                     if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
                         z.hp--;
+                        if (b.isIce) {
+                            z.frozenTimer = 100;
+                            z.el.classList.add('frozen');
+                        }
                         z.el.style.opacity = 0.5;
                         setTimeout(() => z.el.style.opacity = 1, 100);
                         hit = true;
-                        
-                        if (z.hp <= 0) {
-                            killZombie(z);
-                        }
+                        if (z.hp <= 0) killZombie(z);
                         break;
                     }
                 }
-
-                if (hit || b.x > 900) {
-                    b.el.remove();
-                    bullets.splice(i, 1);
-                }
+                if (hit || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
             }
 
-            // 2. 僵尸逻辑
+            // 姜丝炒肉逻辑
             for (let i = zombies.length - 1; i >= 0; i--) {
                 const z = zombies[i];
                 if (z.dead) continue;
+
+                if (z.frozenTimer > 0) {
+                    z.speed = z.baseSpeed * 0.5;
+                    z.frozenTimer--;
+                } else {
+                    z.speed = z.baseSpeed;
+                    z.el.classList.remove('frozen');
+                }
 
                 if (!z.eating) {
                     z.x -= z.speed;
@@ -494,33 +547,26 @@
                 }
 
                 const col = Math.floor((z.x + 40) / 100);
-
                 if (col >= 0 && col < 9) {
                     const plant = grid[z.row][col];
                     if (plant && !plant.dead) {
                         if (z.x < (col * 100 + 60)) {
                             z.eating = true;
-                            // 伤害植物 (现在每 25ms 运行一次，所以几率要调整)
-                            if (Math.random() < 0.03) { // 调整为3%的几率扣血
+                            if (Math.random() < 0.03) {
                                 plant.hp--;
                                 plant.el.style.opacity = 0.5;
                                 setTimeout(() => plant.el.style.opacity = 1, 100);
-                                if (plant.hp <= 0) {
-                                    killPlant(plant);
-                                    z.eating = false;
-                                }
+                                if (plant.hp <= 0) { killPlant(plant); z.eating = false; }
                             }
                         }
-                    } else {
-                        z.eating = false;
-                    }
+                    } else { z.eating = false; }
                 }
 
                 if (z.x < -40) {
-                    // 游戏结束
                     gameActive = false;
-                    saveScore(score); // 游戏结束时保存分数
-                    alert(`🧠 僵尸吃掉了你的脑子！\n最终得分: ${score}`);
+                    saveScore(score);
+                    // 修改了结束语
+                    alert(`🧠 游戏结束！\n你的脑子被姜丝炒肉吃了。\n最终得分: ${score}`);
                     location.reload();
                     return;
                 }
@@ -528,29 +574,20 @@
         }
 
         function killZombie(z) {
-            z.dead = true;
-            z.el.remove();
+            z.dead = true; z.el.remove();
             const idx = zombies.indexOf(z);
             if (idx > -1) zombies.splice(idx, 1);
-            score += 10;
-            scoreText.innerText = score;
+            score += 10; scoreText.innerText = score;
         }
-
         function killPlant(p) {
-            p.dead = true;
-            p.el.remove();
-            grid[p.r][p.c] = null;
+            p.dead = true; p.el.remove(); grid[p.r][p.c] = null;
         }
-
         function showMessage(text, color) {
-            msgText.innerText = text;
-            msgText.style.color = color;
+            msgText.innerText = text; msgText.style.color = color;
         }
 
-        // 页面加载时执行
         updateCards();
         displayLeaderboard();
-
     </script>
 </body>
 </html>
