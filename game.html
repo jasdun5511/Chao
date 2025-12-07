@@ -483,7 +483,7 @@
                     if (hasEnemy) createBullet(r, c, true);
                 }, 1200);
             } else if (type === 'nut') {
-                symbol = '🌰'; hp = 40;
+                symbol = '🌰'; hp = 150;
             } else if (type === 'bomb') {
                 symbol = '🍒'; hp = 1;
                 setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
@@ -559,7 +559,7 @@
         }
         
         setInterval(gameLoop, 20);
-        setInterval(spawnZombie, 4500); 
+        setInterval(spawnZombie, 5500); 
         setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
         // --- 冷却计时器，每 20ms 运行一次 ---
