@@ -483,7 +483,7 @@
                     if (hasEnemy) createBullet(r, c, true);
                 }, 1200);
             } else if (type === 'nut') {
-                symbol = '🌰'; hp = 150;
+                symbol = '🌰'; hp = 175;
             } else if (type === 'bomb') {
                 symbol = '🍒'; hp = 1000;
                 setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
