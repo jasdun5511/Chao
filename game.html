@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>植物大战姜丝炒肉 - 带冷却时间</title>
+    <title>植物大战姜丝炒肉 - 射手移动修复版</title>
     <style>
         /* --- CSS 样式部分 --- */
         body {
@@ -73,13 +73,12 @@
             background: #9aa; border: 3px solid #555; border-radius: 5px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative; cursor: pointer; transition: transform 0.1s;
-            overflow: hidden; /* 确保冷却条不会溢出 */
+            overflow: hidden; 
         }
         .card.active { 
             border-color: #FFD700; background: #fff; 
             box-shadow: 0 0 15px #FFD700; transform: scale(1.1); z-index: 10;
         }
-        /* 冷却中的样式 */
         .card.cooling {
             cursor: not-allowed;
             opacity: 0.6;
@@ -91,13 +90,13 @@
             left: 0;
             width: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            transition: height 0.02s linear; /* 平滑过渡 */
+            transition: height 0.02s linear; 
             z-index: 5;
         }
         .card.disabled::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); border-radius: 3px;
-            z-index: 6; /* 确保它在冷却条之上，但植物元素之下 */
+            z-index: 6; 
         }
         .card-emoji { font-size: 38px; position: relative; z-index: 7;}
         .card-cost { font-size: 14px; font-weight: bold; color: #000; margin-top: 5px; position: relative; z-index: 7; }
@@ -135,9 +134,24 @@
         
         .bullet { font-size: 24px; width: 20px; height: 20px; z-index: 15; }
 
+        /* 生命值条 */
+        .hp-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 8px;
+            background: rgba(0,0,0,0.5);
+            z-index: 12;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .hp-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
         #msg { text-align: center; height: 20px; color: #ffeb3b; margin-top: 5px; font-weight: bold; }
 
-        /* --- 图鉴样式保持不变 --- */
         #encyclopedia {
             margin-top: 30px;
             width: 900px;
@@ -179,7 +193,7 @@
 <body>
 
     <div id="game-wrapper">
-        <h1>🌻 植物大战姜丝 🐷</h1>
+        <h1>🌻 植物大战姜丝 (射手移动修复版) 🐷</h1>
         
         <div class="top-area">
             <div class="header">
@@ -296,15 +310,14 @@
                             <h4>铁桶姜丝 (Buckethead)</h4>
                             <div><span class="stat-tag" style="background:#d32f2f">生命: 35</span><span class="stat-tag">速度: 中</span></div>
                             <p><b>危险！</b>戴着铁桶，防御力极高。</p>
-<div class="info-card">
-    <div class="info-icon" style="font-size: 35px;">🔫</div>
-    <div class="info-text">
-        <h4>豌豆射手姜丝 (Shooter)</h4>
-        <div><span class="stat-tag">生命: 8</span><span class="stat-tag">速度: 慢</span></div>
-        <p>在远处向植物发射子弹！需要优先处理。</p>
-   
-                                </div>
-                            </div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon" style="font-size: 35px;">🔫</div>
+                        <div class="info-text">
+                            <h4>豌豆射手姜丝 (Shooter)</h4>
+                            <div><span class="stat-tag">生命: 8</span><span class="stat-tag">速度: 慢</span></div>
+                            <p>在远处向植物发射子弹！需要优先处理。</p>
                         </div>
                     </div>
                 </div>
@@ -313,7 +326,6 @@
     </div>
 
     <script>
-    // --- 游戏画面缩放和初始化 ---
     function resizeGame() {
         const wrapper = document.getElementById('game-wrapper');
         const targetWidth = 940; 
@@ -340,8 +352,8 @@
 
     // --- 难度控制变量 ---
     let difficultyLevel = 0;
-    let baseZombieSpeed = 0.5; // 初始速度：0.5
-    let normalSpawnRate = 5000; // 初始生成间隔：5000ms (5秒)
+    let baseZombieSpeed = 0.5; 
+    let normalSpawnRate = 5000; 
     let spawnIntervalId = null; 
     // ----------------------
    
@@ -349,7 +361,6 @@
     const zombies = []; 
     const bullets = []; 
 
-    // --- 卡片冷却状态 ---
     const cardCooldowns = {
         'sunflower': { time: 5000, remaining: 0, el: document.getElementById('card-sunflower') },
         'pea': { time: 7000, remaining: 0, el: document.getElementById('card-pea') },
@@ -461,54 +472,67 @@
         showMessage("种植成功！", "#4CAF50");
     }
 
-    function createPlant(r, c, type) {
-    const el = document.createElement('div');
-    el.className = 'element';
-    
-    el.style.left = c * 100 + 10 + 'px';
-    el.style.top = r * 100 + 10 + 'px';
-    
-    let initialHp = 5;
-    let symbol = '';
-    
-    if (type === 'sunflower') {
-        symbol = '🌻'; initialHp = 4;
-        const timer = setInterval(() => {
-            if (plant.dead) { clearInterval(timer); return; }
-            sun += 25; sunText.innerText = sun; updateCards();
-            el.style.transform = "scale(1.3)";
-            setTimeout(() => el.style.transform = "scale(1)", 200);
-        }, 4000);
-    } else if (type === 'pea') {
-        symbol = '🌱'; initialHp = 5;
-        const timer = setInterval(() => {
-            if (plant.dead) { clearInterval(timer); return; }
-            const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-            if (hasEnemy) createBullet(r, c, false);
-        }, 1200);
-    } else if (type === 'ice') {
-        symbol = '🧊'; initialHp = 5;
-        const timer = setInterval(() => {
-            if (plant.dead) { clearInterval(timer); return; }
-            const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-            if (hasEnemy) createBullet(r, c, true);
-        }, 1200);
-    } else if (type === 'nut') {
-        symbol = '🌰'; 
-        initialHp = 40; // 显著增加坚果墙的血量，防止瞬间死亡
-    } else if (type === 'bomb') {
-        symbol = '🍒'; initialHp = 1000;
-        setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
+    function updatePlantHP(plant) {
+        if (plant.hpFillEl) {
+            const hpPercent = Math.max(0, (plant.hp / plant.maxHp) * 100);
+            plant.hpFillEl.style.width = `${hpPercent}%`;
+        }
     }
 
-    el.innerText = symbol;
-    board.appendChild(el);
-    
-    // 确保 plant 对象使用正确的初始血量
-    let plant = { r, c, hp: initialHp, el, dead: false, type: type, maxHp: initialHp };
-    grid[r][c] = plant;
-}
+    function createPlant(r, c, type) {
+        const el = document.createElement('div');
+        el.className = 'element';
+        
+        el.style.left = c * 100 + 10 + 'px';
+        el.style.top = r * 100 + 10 + 'px';
+        
+        let initialHp = 5;
+        let symbol = '';
+        
+        if (type === 'sunflower') {
+            symbol = '🌻'; initialHp = 4;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                sun += 25; sunText.innerText = sun; updateCards();
+                el.style.transform = "scale(1.3)";
+                setTimeout(() => el.style.transform = "scale(1)", 200);
+            }, 3000);
+        } else if (type === 'pea') {
+            symbol = '🌱'; initialHp = 5;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                if (hasEnemy) createBullet(r, c, false);
+            }, 1200);
+        } else if (type === 'ice') {
+            symbol = '🧊'; initialHp = 5;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                if (hasEnemy) createBullet(r, c, true);
+            }, 1200);
+        } else if (type === 'nut') {
+            symbol = '🌰'; initialHp = 400; 
+        } else if (type === 'bomb') {
+            symbol = '🍒'; initialHp = 1000;
+            setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
+        }
 
+        el.innerText = symbol;
+
+        const hpBar = document.createElement('div');
+        hpBar.className = 'hp-bar';
+        const hpFill = document.createElement('div');
+        hpFill.className = 'hp-fill';
+        if (type === 'nut') hpFill.style.backgroundColor = '#FF9800'; 
+        hpBar.appendChild(hpFill);
+        el.appendChild(hpBar);
+
+        board.appendChild(el);
+        
+        let plant = { r, c, hp: initialHp, el, dead: false, type: type, maxHp: initialHp, hpFillEl: hpFill };
+        grid[r][c] = plant;
+    }
 
     function createBullet(r, c, isIce) {
         const el = document.createElement('div');
@@ -521,19 +545,18 @@
         board.appendChild(el);
         bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: isIce });
     }
-function createZombieBullet(r, c) {
-    const el = document.createElement('div');
-    el.className = 'element bullet';
-    el.innerText = '🔴'; // 红色子弹，区分植物子弹
-    let startX = c * 100 + 50;
-    let startY = r * 100 + 40;
-    el.style.left = startX + 'px';
-    el.style.top = startY + 'px'; 
-    board.appendChild(el);
-    // isZombieBullet: true 表示子弹向左移动，伤害植物
-    bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: false, isZombieBullet: true });
-}
 
+    function createZombieBullet(r, c) {
+        const el = document.createElement('div');
+        el.className = 'element bullet';
+        el.innerText = '🔴'; 
+        let startX = c * 100 + 50;
+        let startY = r * 100 + 40;
+        el.style.left = startX + 'px';
+        el.style.top = startY + 'px'; 
+        board.appendChild(el);
+        bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: false, isZombieBullet: true });
+    }
 
     function explode(r, c) {
         showMessage("💥 BOOM! 💥", "red");
@@ -551,12 +574,10 @@ function createZombieBullet(r, c) {
 
         for (const z of zombies) {
             if (z.dead) continue;
-            
             if (z.row >= minRow && z.row <= maxRow) {
                 const minX = (c - 1) * 100; 
                 const maxX = (c + 2) * 100; 
                 const zombieCenter = z.x + 40;
-                
                 if (zombieCenter >= minX && zombieCenter < maxX) {
                     killZombie(z);
                 }
@@ -565,69 +586,56 @@ function createZombieBullet(r, c) {
     }
 
     function spawnZombie() {
-    if (!gameActive) return;
-    const r = Math.floor(Math.random() * 5);
-    const el = document.createElement('div');
-    el.className = 'element zombie';
-    
-    const rand = Math.random();
-    let type = 'normal';
-    let hp = 6;
-    let speed = baseZombieSpeed; 
-    let symbol = '🐷';
+        if (!gameActive) return;
+        const r = Math.floor(Math.random() * 5);
+        const el = document.createElement('div');
+        el.className = 'element zombie';
+        
+        const rand = Math.random();
+        let type = 'normal';
+        let hp = 6;
+        let speed = baseZombieSpeed; 
+        let symbol = '🐷';
 
-    const isGiantWave = (normalSpawnRate <= 1000); 
+        const isGiantWave = (normalSpawnRate <= 1000); 
 
-    // --- 修正后的生成逻辑：优先判断特殊僵尸 ---
-    
-    // 1. 豌豆射手姜丝：在任何模式下，有 5% 的独立概率生成
-    if (rand < 0.05) { 
-        type = 'shooter'; 
-        hp = 8; 
-        speed = baseZombieSpeed * 0.5;
-        symbol = '🔫'; 
-    } 
-    // 2. 巨波模式（Giant Wave）下的僵尸
-    else if (isGiantWave) {
-        // 0.05 - 0.25 (20%) 铁桶, 0.25 - 0.5 (25%) 路障, 0.5 - 1.0 (50%) 普通
-        if (rand < 0.25) { // 之前是 < 0.2，现在调整到 0.25，给铁桶更多机会
-            type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-        } else if (rand < 0.5) {
-            type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
+        // --- 射手姜丝逻辑：20% 概率 ---
+        if (rand < 0.20) { 
+            type = 'shooter'; 
+            hp = 8; 
+            speed = baseZombieSpeed * 0.5;
+            symbol = '🔫'; 
+        } 
+        else if (isGiantWave) {
+            if (rand < 0.45) { 
+                type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
+            } else if (rand < 0.8) {
+                type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
+            }
+        } else { 
+            if (rand < 0.35) { 
+                type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
+            } else if (rand < 0.6) {
+                type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
+            }
         }
-    } 
-    // 3. 正常难度模式下的僵尸
-    else { 
-        // 0.05 - 0.15 (10%) 铁桶, 0.15 - 0.45 (30%) 路障, 0.45 - 1.0 (55%) 普通
-        if (rand < 0.15) { // 之前是 < 0.1
-            type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-        } else if (rand < 0.45) { // 之前是 < 0.35
-            type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
-        }
-        // 否则生成普通姜丝 (Pork)
+        
+        el.innerText = symbol;
+        let startX = 900;
+        let startY = r * 100 + 10;
+
+        el.style.left = startX + 'px'; el.style.top = startY + 'px';
+        board.appendChild(el);
+
+        zombies.push({ 
+            x: startX, row: r, el, hp: hp, 
+            baseSpeed: speed, speed: speed, 
+            dead: false, eating: false,
+            frozenTimer: 0,
+            type: type, 
+            shootCooldown: 0 
+        });
     }
-    // ---------------------------------------------
-    
-    el.innerText = symbol;
-    let startX = 900;
-    let startY = r * 100 + 10;
-
-    el.style.left = startX + 'px'; el.style.top = startY + 'px';
-    board.appendChild(el);
-
-    zombies.push({ 
-        x: startX, row: r, el, hp: hp, 
-        baseSpeed: speed, speed: speed, 
-        dead: false, eating: false,
-        frozenTimer: 0,
-        type: type, 
-        shootCooldown: 0 
-    });
-}
-
-
-
-    // --- 定时器和难度逻辑 (统一管理) ---
 
     // Function to start/restart spawning with current rate
     function startSpawning() {
@@ -660,13 +668,9 @@ function createZombieBullet(r, c) {
         }, 10000); 
     }, 60000); 
 
-    // 主游戏逻辑循环
     setInterval(gameLoop, 20);
-
-    // 阳光自然掉落
     setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
 
-    // 冷却计时器，每 20ms 运行一次
     const COOLDOWN_TICK = 20; 
     setInterval(() => {
         if (!gameActive) return;
@@ -681,141 +685,132 @@ function createZombieBullet(r, c) {
 
 
     function gameLoop() {
-    if (!gameActive) return;
+        if (!gameActive) return;
 
-    // --- 子弹逻辑 ---
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        
-        if (b.isZombieBullet) {
-            // 僵尸子弹向左移动
-            b.x -= 4; // 稍微慢点
-            b.el.style.left = b.x + 'px';
+        // --- 子弹逻辑 ---
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const b = bullets[i];
             
-            // 检查是否击中植物
-            let hitPlant = false;
-            const col = Math.floor((b.x + 40) / 100);
-            if (col >= 0 && col < 9) {
-                const plant = grid[b.row][col];
-                if (plant && !plant.dead) {
-                    if (b.x < col * 100 + 80) { // 检查碰撞
-                        plant.hp--;
-                        plant.el.style.opacity = 0.5;
-                        setTimeout(() => plant.el.style.opacity = 1, 100);
-                        hitPlant = true;
-                        if (plant.hp <= 0) killPlant(plant);
-                    }
-                }
-            }
-            if (hitPlant || b.x < 0) { b.el.remove(); bullets.splice(i, 1); }
-            
-        } else {
-            // 植物子弹向右移动
-            b.x += 6;
-            b.el.style.left = b.x + 'px';
-            let hitZombie = false;
-            for (const z of zombies) {
-                if (z.dead) continue;
-                if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
-                    z.hp--;
-                    if (b.isIce) {
-                        z.frozenTimer = 100;
-                        z.el.classList.add('frozen');
-                    }
-                    z.el.style.opacity = 0.5;
-                    setTimeout(() => z.el.style.opacity = 1, 100);
-                    hitZombie = true;
-                    if (z.hp <= 0) killZombie(z);
-                    break;
-                }
-            }
-            if (hitZombie || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
-        }
-    }
-
-    // --- 姜丝炒肉逻辑 ---
-    for (let i = zombies.length - 1; i >= 0; i--) {
-        const z = zombies[i];
-        if (z.dead) continue;
-
-        // 攻击冷却计时器
-        if (!z.attackCooldown) z.attackCooldown = 0;
-        if (!z.shootCooldown) z.shootCooldown = 0; // 射击冷却计时器
-
-        if (z.frozenTimer > 0) {
-            z.speed = z.baseSpeed * 0.5;
-            z.frozenTimer--;
-        } else {
-            z.speed = z.baseSpeed;
-            z.el.classList.remove('frozen');
-        }
-
-        // --- 射手姜丝逻辑 ---
-        if (z.type === 'shooter') {
-            const plantHere = grid[z.row].find(p => p && !p.dead);
-            
-            // 如果看到植物并且距离在 2-8 格子之间 (200px - 800px)
-            if (plantHere && z.x > 200 && z.x < 800) {
-                z.speed = 0; // 站定射击
-                z.el.style.left = z.x + 'px'; // 保持位置
+            if (b.isZombieBullet) {
+                b.x -= 8; // 僵尸子弹速度
+                b.el.style.left = b.x + 'px';
                 
-                if (z.shootCooldown === 0) {
-                    createZombieBullet(z.row, (z.x / 100)); // 发射子弹
-                    z.shootCooldown = 50; // 50 帧冷却 (1秒)
-                }
-            } else if (!plantHere) {
-                // 如果没有植物，则继续走路
-                z.x -= z.speed;
-                z.el.style.left = z.x + 'px';
-            }
-            if (z.shootCooldown > 0) z.shootCooldown--;
-        } 
-        // --- 普通/近战姜丝逻辑 ---
-        else if (!z.eating) {
-            z.x -= z.speed;
-            z.el.style.left = z.x + 'px';
-        }
-
-
-        // --- 近战攻击逻辑 (适用于所有僵尸) ---
-        const col = Math.floor((z.x + 40) / 100);
-        if (col >= 0 && col < 9) {
-            const plant = grid[z.row][col];
-            if (plant && !plant.dead) {
-                if (z.x < (col * 100 + 60)) {
-                    z.eating = true;
-                    if (z.attackCooldown >= 30) { 
-                        plant.hp--;
-                        z.attackCooldown = 0; 
-                        
-                        plant.el.style.opacity = 0.5;
-                        setTimeout(() => plant.el.style.opacity = 1, 100);
-                        
-                        if (plant.hp <= 0) { 
-                            killPlant(plant); 
-                            z.eating = false; 
+                let hitPlant = false;
+                const col = Math.floor((b.x + 40) / 100);
+                if (col >= 0 && col < 9) {
+                    const plant = grid[b.row][col];
+                    if (plant && !plant.dead) {
+                        if (b.x < col * 100 + 80 && b.x > col * 100 + 20) { 
+                            plant.hp -= 40; // 僵尸子弹伤害高一点
+                            updatePlantHP(plant);
+                            plant.el.style.opacity = 0.5;
+                            setTimeout(() => plant.el.style.opacity = 1, 100);
+                            hitPlant = true;
+                            if (plant.hp <= 0) killPlant(plant);
                         }
                     }
                 }
-            } else { 
-                z.eating = false; 
-                z.attackCooldown = 0; 
+                if (hitPlant || b.x < 0) { b.el.remove(); bullets.splice(i, 1); }
+                
+            } else {
+                b.x += 8; // 植物子弹速度
+                b.el.style.left = b.x + 'px';
+                let hitZombie = false;
+                for (const z of zombies) {
+                    if (z.dead) continue;
+                    if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
+                        z.hp--;
+                        if (b.isIce) {
+                            z.frozenTimer = 100;
+                            z.el.classList.add('frozen');
+                        }
+                        z.el.style.opacity = 0.5;
+                        setTimeout(() => z.el.style.opacity = 1, 100);
+                        hitZombie = true;
+                        if (z.hp <= 0) killZombie(z);
+                        break;
+                    }
+                }
+                if (hitZombie || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
             }
         }
-        
-        // 只有在啃食时，攻击冷却才增加
-        if (z.eating) z.attackCooldown++;
+
+        // --- 姜丝炒肉逻辑 ---
+        for (let i = zombies.length - 1; i >= 0; i--) {
+            const z = zombies[i];
+            if (z.dead) continue;
+
+            if (!z.attackCooldown) z.attackCooldown = 0;
+            if (!z.shootCooldown) z.shootCooldown = 0; 
+
+            if (z.frozenTimer > 0) {
+                z.speed = z.baseSpeed * 0.5;
+                z.frozenTimer--;
+            } else {
+                z.speed = z.baseSpeed;
+                z.el.classList.remove('frozen');
+            }
+
+            // --- 射手姜丝特殊行为 (只处理射击，不停止移动) ---
+            if (z.type === 'shooter') {
+                const hasTarget = grid[z.row].some(p => p && !p.dead);
+                // 射击判断：有目标且位于射击范围内 (200px - 850px)
+                if (hasTarget && z.x > 200 && z.x < 850) {
+                    if (z.shootCooldown <= 0) {
+                        // 发射子弹，传入当前列位置
+                        createZombieBullet(z.row, z.x / 100); 
+                        z.shootCooldown = 100; // 2秒发射一次
+                    }
+                }
+                if (z.shootCooldown > 0) z.shootCooldown--;
+            } 
+            
+            // --- 近战攻击逻辑 (通用，所有姜丝都适用) ---
+            const col = Math.floor((z.x + 40) / 100);
+            if (col >= 0 && col < 9) {
+                const plant = grid[z.row][col];
+                if (plant && !plant.dead) {
+                    if (z.x < (col * 100 + 60)) {
+                        z.eating = true;
+                        if (z.attackCooldown >= 30) { 
+                            plant.hp--;
+                            updatePlantHP(plant);
+                            z.attackCooldown = 0; 
+                            
+                            plant.el.style.opacity = 0.5;
+                            setTimeout(() => plant.el.style.opacity = 1, 100);
+                            
+                            if (plant.hp <= 0) { 
+                                killPlant(plant); 
+                                z.eating = false; 
+                            }
+                        }
+                    }
+                } else { 
+                    z.eating = false; 
+                    z.attackCooldown = 0; 
+                }
+            }
+            
+            if (z.eating) z.attackCooldown++;
 
 
-        if (z.x < -40) {
-            gameActive = false;
-            saveScore(score);
-            alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
-            location.reload();
-            return;
+            // --- 统一移动逻辑 (所有姜丝，只要不啃食就移动) ---
+            if (!z.eating) {
+                z.x -= z.speed;
+                z.el.style.left = z.x + 'px';
+            }
+
+
+            if (z.x < -40) {
+                gameActive = false;
+                saveScore(score);
+                alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
+                location.reload();
+                return;
+            }
         }
     }
-}
 
     function killZombie(z) {
         z.dead = true; z.el.remove();
@@ -830,10 +825,9 @@ function createZombieBullet(r, c) {
         msgText.innerText = text; msgText.style.color = color;
     }
 
-    // --- 游戏启动 ---
     updateCards();
     displayLeaderboard();
-    startSpawning(); // 确保僵尸生成机制被启动
+    startSpawning(); 
 </script>
 </body>
 </html>
