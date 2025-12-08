@@ -672,17 +672,17 @@
         const isGiantWave = (normalSpawnRate <= 1000); 
 
         // --- 恢复原始随机分配 ---
-        if (rand < 0.02) { // 2% 巨人姜丝
+        if (rand < 0.05) { // 5% 巨人姜丝
             type = 'gargantuar'; hp = 200; speed = baseZombieSpeed * 0.25; symbol = '🗿'; thrownImp = false;
-        } else if (rand < 0.17) { // 15% 疾跑者 (0.02 到 0.17)
+        } else if (rand < 0.20) { // 15% 疾跑者 (0.05 到 0.20)
             type = 'runner'; hp = 3; speed = baseZombieSpeed * 1.5; symbol = '🏃‍♂️'; 
-        } else if (rand < 0.32) { // 15% 射手 (0.17 到 0.32)
+        } else if (rand < 0.35) { // 15% 射手 (0.20 到 0.35)
             type = 'shooter'; hp = 8; speed = baseZombieSpeed * 0.5; symbol = '🔫'; 
         } 
         else if (isGiantWave) {
-            if (rand < 0.52) { // 20% 铁桶 (0.32 到 0.52)
+            if (rand < 0.55) { // 20% 铁桶 (0.35 到 0.55)
                 type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-            } else if (rand < 0.8) { // 28% 路障 (0.52 到 0.80)
+            } else if (rand < 0.83) { // 28% 路障 (0.55 到 0.83)
                 type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
             } // 剩下的 20% 仍是普通姜丝
         } else { // 正常模式
