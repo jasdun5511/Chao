@@ -486,9 +486,9 @@
         }, 1200);
     } else if (type === 'nut') {
         symbol = '🌰'; 
-        initialHp = 400; // 显著增加坚果墙的血量，防止瞬间死亡
+        initialHp = 40; // 显著增加坚果墙的血量，防止瞬间死亡
     } else if (type === 'bomb') {
-        symbol = '🍒'; initialHp = 1;
+        symbol = '🍒'; initialHp = 1000;
         setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
     }
 
