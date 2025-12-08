@@ -327,7 +327,14 @@
         let score = 0;
         let selection = null;
         let gameActive = true;
-        
+
+     // --- 难度控制变量 (NEW) ---
+let difficultyLevel = 0;
+let baseZombieSpeed = 0.5; // 初始速度：0.5
+let normalSpawnRate = 5000; // 初始生成间隔：5000ms (5秒)
+let spawnIntervalId = null; 
+// -----------------------------
+   
         const grid = Array(5).fill(null).map(() => Array(9).fill(null));
         const zombies = []; 
         const bullets = []; 
@@ -560,24 +567,28 @@ function spawnZombie() {
     const el = document.createElement('div');
     el.className = 'element zombie';
     
-    // 巨波时提高出现硬核僵尸的概率
     const rand = Math.random();
     let type = 'normal';
     let hp = 6;
-    let speed = 0.8; 
+    let speed = baseZombieSpeed; // 使用当前动态速度
     let symbol = '🐷';
 
-    if (zombieSpawnRate < 3000) { // 如果处于巨波期间
-        if (rand < 0.2) { // 提高路障和铁桶概率
-            type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
+    // 判断是否处于巨波模式（巨波模式的生成间隔是 1000ms）
+    const isGiantWave = (normalSpawnRate <= 1000); 
+
+    if (isGiantWave) {
+        // 巨波模式：提高重甲僵尸的概率
+        if (rand < 0.2) { 
+            type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
         } else if (rand < 0.5) {
-            type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
+            type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
         }
-    } else { // 正常概率
+    } else { 
+        // 正常难度渐进模式
         if (rand < 0.1) {
-            type = 'bucket'; hp = 35; speed = 0.6; symbol = '👺'; 
+            type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
         } else if (rand < 0.35) {
-            type = 'cone'; hp = 18; speed = 0.7; symbol = '⛑️';
+            type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
         }
     }
     
@@ -590,11 +601,12 @@ function spawnZombie() {
 
     zombies.push({ 
         x: startX, row: r, el, hp: hp, 
-        baseSpeed: speed, speed: speed,
+        baseSpeed: speed, speed: speed, 
         dead: false, eating: false,
         frozenTimer: 0
     });
 }
+
 
         
         setInterval(gameLoop, 20);
