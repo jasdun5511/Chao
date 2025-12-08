@@ -512,7 +512,7 @@
                 if (hasEnemy) createBullet(r, c, true);
             }, 1200);
         } else if (type === 'nut') {
-            symbol = '🌰'; initialHp = 400; 
+            symbol = '🌰'; initialHp = 40; 
         } else if (type === 'bomb') {
             symbol = '🍒'; initialHp = 1000;
             setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
@@ -701,7 +701,7 @@
                     const plant = grid[b.row][col];
                     if (plant && !plant.dead) {
                         if (b.x < col * 100 + 80 && b.x > col * 100 + 20) { 
-                            plant.hp -= 40; // 僵尸子弹伤害高一点
+                            plant.hp -= 1; // 僵尸子弹伤害高一点
                             updatePlantHP(plant);
                             plant.el.style.opacity = 0.5;
                             setTimeout(() => plant.el.style.opacity = 1, 100);
