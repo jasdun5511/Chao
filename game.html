@@ -1,4 +1,309 @@
-<script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>植物大战姜丝炒肉 - 带冷却时间</title>
+    <style>
+        /* --- CSS 样式部分 --- */
+        body {
+            background-color: #222;
+            color: white;
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            transform-origin: top center;
+            width: 920px;
+            padding-bottom: 20px;
+        }
+
+        h1 { text-align: center; margin: 15px 0; font-size: 28px; text-shadow: 2px 2px 0 #000; color: #FF9800; }
+
+        .top-area {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .header {
+            display: flex;
+            gap: 20px;
+            font-size: 20px;
+            background: #444;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #666;
+            width: 350px;
+            align-items: center;
+        }
+        .sun { color: #FFD700; font-weight: bold; }
+
+        #leaderboard {
+            width: 250px;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #555;
+            text-align: left;
+        }
+        #leaderboard h2 { font-size: 16px; margin: 0 0 5px 0; color: #FFD700; border-bottom: 1px solid #444; }
+        #leaderboard ol { padding-left: 25px; margin: 0; font-size: 14px; color: #ccc; }
+        #leaderboard li { margin-bottom: 3px; }
+
+        .seed-bank {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .card {
+            width: 75px; height: 95px;
+            background: #9aa; border: 3px solid #555; border-radius: 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; cursor: pointer; transition: transform 0.1s;
+            overflow: hidden; /* 确保冷却条不会溢出 */
+        }
+        .card.active { 
+            border-color: #FFD700; background: #fff; 
+            box-shadow: 0 0 15px #FFD700; transform: scale(1.1); z-index: 10;
+        }
+        /* 冷却中的样式 */
+        .card.cooling {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transition: none;
+        }
+        .card-cooldown-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            transition: height 0.02s linear; /* 平滑过渡 */
+            z-index: 5;
+        }
+        .card.disabled::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); border-radius: 3px;
+            z-index: 6; /* 确保它在冷却条之上，但植物元素之下 */
+        }
+        .card-emoji { font-size: 38px; position: relative; z-index: 7;}
+        .card-cost { font-size: 14px; font-weight: bold; color: #000; margin-top: 5px; position: relative; z-index: 7; }
+
+        #game-board {
+            position: relative;
+            width: 900px; height: 500px;
+            background-color: #4CAF50;
+            border: 10px solid #3e2723; border-radius: 8px;
+            display: grid;
+            grid-template-rows: repeat(5, 100px); grid-template-columns: repeat(9, 100px);
+            background-image: 
+                linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C),
+                linear-gradient(45deg, #388E3C 25%, transparent 25%, transparent 75%, #388E3C 75%, #388E3C);
+            background-size: 200px 200px; background-position: 0 0, 100px 100px;
+            overflow: hidden; 
+        }
+
+        .cell { width: 100px; height: 100px; border: 1px solid rgba(255,255,255,0.05); }
+        .cell.active-zone { background-color: rgba(255, 255, 255, 0.3); cursor: pointer; }
+
+        .element {
+            position: absolute; 
+            width: 80px; 
+            height: 80px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 55px; 
+            pointer-events: none; 
+            z-index: 10;
+        }
+        .zombie { z-index: 20; transition: transform 0.05s linear; }
+        .zombie.frozen { filter: hue-rotate(180deg) brightness(1.2); }
+        
+        .bullet { font-size: 24px; width: 20px; height: 20px; z-index: 15; }
+
+        #msg { text-align: center; height: 20px; color: #ffeb3b; margin-top: 5px; font-weight: bold; }
+
+        /* --- 图鉴样式保持不变 --- */
+        #encyclopedia {
+            margin-top: 30px;
+            width: 900px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #encyclopedia h2 { border-bottom: 2px solid #888; padding-bottom: 10px; margin-top: 0; color: #FF9800; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .info-section h3 { color: #4CAF50; margin-bottom: 10px; }
+        .info-section h3.zombie-title { color: #FF9800; }
+
+        .info-card {
+            display: flex;
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            align-items: center;
+        }
+        .info-icon { font-size: 40px; width: 60px; text-align: center; margin-right: 15px; }
+        .info-text h4 { margin: 0; color: #FFD700; font-size: 16px; }
+        .info-text p { margin: 5px 0 0 0; font-size: 13px; color: #ccc; line-height: 1.4; }
+        .stat-tag { 
+            display: inline-block; background: #555; color: white; 
+            padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-wrapper">
+        <h1>🌻 植物大战姜丝 🐷</h1>
+        
+        <div class="top-area">
+            <div class="header">
+                <div class="sun">☀️ 阳光: <span id="sun-count">150</span></div>
+                <div class="score">得分: <span id="score-count">0</span></div>
+            </div>
+            
+            <div id="leaderboard">
+                <h2>🏆 炒肉大厨榜 (前5名)</h2>
+                <ol id="scores-list"></ol>
+            </div>
+        </div>
+
+        <div class="seed-bank">
+            <div class="card" id="card-sunflower" onclick="selectCard('sunflower', 50)">
+                <div class="card-emoji">🌻</div>
+                <div class="card-cost">50</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
+            </div>
+            <div class="card" id="card-pea" onclick="selectCard('pea', 100)">
+                <div class="card-emoji">🌱</div>
+                <div class="card-cost">100</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
+            </div>
+            <div class="card" id="card-ice" onclick="selectCard('ice', 175)">
+                <div class="card-emoji">🧊</div>
+                <div class="card-cost">175</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
+            </div>
+            <div class="card" id="card-nut" onclick="selectCard('nut', 50)">
+                <div class="card-emoji">🌰</div>
+                <div class="card-cost">50</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
+            </div>
+            <div class="card" id="card-bomb" onclick="selectCard('bomb', 150)">
+                <div class="card-emoji">🍒</div>
+                <div class="card-cost">150</div>
+                <div class="card-cooldown-bar" style="height: 0;"></div>
+            </div>
+        </div>
+
+        <div id="msg">欢迎！请选择植物卡片开始游戏</div>
+
+        <div id="game-board"></div>
+
+        <div id="encyclopedia">
+            <h2>📖 游戏图鉴</h2>
+            <div class="info-grid">
+                <div class="info-section">
+                    <h3>🌱 植物阵营</h3>
+                    <div class="info-card">
+                        <div class="info-icon">🌻</div>
+                        <div class="info-text">
+                            <h4>向日葵 (Sunflower)</h4>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">冷却: 5秒</span></div>
+                            <p>每隔 3 秒生产 25 点阳光。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🌱</div>
+                        <div class="info-text">
+                            <h4>豌豆射手 (Peashooter)</h4>
+                            <div><span class="stat-tag">花费: 100</span><span class="stat-tag">冷却: 7秒</span></div>
+                            <p>发射直线豌豆攻击敌人。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🧊</div>
+                        <div class="info-text">
+                            <h4>寒冰射手 (Snow Pea)</h4>
+                            <div><span class="stat-tag">花费: 175</span><span class="stat-tag">冷却: 7秒</span></div>
+                            <p>发射冰豌豆，使敌人<b>减速 50%</b>。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🌰</div>
+                        <div class="info-text">
+                            <h4>坚果墙 (Wall-nut)</h4>
+                            <div><span class="stat-tag">花费: 50</span><span class="stat-tag">冷却: 10秒</span></div>
+                            <p>防御大师，阻挡敌人的前进。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🍒</div>
+                        <div class="info-text">
+                            <h4>樱桃炸弹 (Cherry Bomb)</h4>
+                            <div><span class="stat-tag">花费: 150</span><span class="stat-tag">冷却: 30秒</span></div>
+                            <p>2秒后爆炸，秒杀范围内的敌人。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3 class="zombie-title">🐷 姜丝炒肉军团</h3>
+                    <div class="info-card">
+                        <div class="info-icon">🐷</div>
+                        <div class="info-text">
+                            <h4>普通姜丝 (Pork)</h4>
+                            <div><span class="stat-tag">生命: 6</span><span class="stat-tag">速度: 快</span></div>
+                            <p>最常见的食材。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">⛑️</div>
+                        <div class="info-text">
+                            <h4>路障姜丝 (Conehead)</h4>
+                            <div><span class="stat-tag">生命: 18</span><span class="stat-tag">速度: 中</span></div>
+                            <p>戴着交通锥，生命值是普通的 3 倍。</p>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">👺</div>
+                        <div class="info-text">
+                            <h4>铁桶姜丝 (Buckethead)</h4>
+                            <div><span class="stat-tag" style="background:#d32f2f">生命: 35</span><span class="stat-tag">速度: 中</span></div>
+                            <p><b>危险！</b>戴着铁桶，防御力极高。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
     // --- 游戏画面缩放和初始化 ---
     function resizeGame() {
         const wrapper = document.getElementById('game-wrapper');
@@ -419,3 +724,5 @@
     displayLeaderboard();
     startSpawning(); // 确保僵尸生成机制被启动
 </script>
+</body>
+</html>
