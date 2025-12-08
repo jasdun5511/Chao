@@ -618,7 +618,7 @@
     }
     // --------------------------------
 
-    function explode(r, c) {
+       function explode(r, c) {
         showMessage("💥 BOOM! 💥", "red");
         const blast = document.createElement('div');
         blast.innerText = '🔥';
@@ -639,7 +639,18 @@
                 const maxX = (c + 2) * 100; 
                 const zombieCenter = z.x + 40;
                 if (zombieCenter >= minX && zombieCenter < maxX) {
-                    killZombie(z);
+                    // --- 替换为固定伤害逻辑 ---
+                    const BOMB_DAMAGE = 120; // <--- 在这里设置您想要的伤害值
+                    z.hp -= BOMB_DAMAGE; 
+                    
+                    // 添加闪烁效果
+                    z.el.style.opacity = 0.3;
+                    setTimeout(() => z.el.style.opacity = 1, 200);
+                    
+                    if (z.hp <= 0) {
+                        killZombie(z); 
+                    }
+                    // --------------------------
                 }
             }
         }
