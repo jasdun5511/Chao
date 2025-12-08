@@ -671,26 +671,29 @@
 
         const isGiantWave = (normalSpawnRate <= 1000); 
         
-        // --- 新增/调整的随机分配 ---
-        if (rand < 0.02) { // 2% 巨人僵尸
+                // --- 新增/调整的随机分配 ---
+        if (rand < 0.05) { // 5% 巨人姜丝 (原 0.02 + 0.03)
             type = 'gargantuar'; hp = 200; speed = baseZombieSpeed * 0.25; symbol = '🗿'; thrownImp = false;
-        } else if (rand < 0.17) { // 15% 疾跑者
+        } else if (rand < 0.20) { // 15% 疾跑者 (原 0.17 + 0.03)
             type = 'runner'; hp = 3; speed = baseZombieSpeed * 1.5; symbol = '🏃‍♂️'; 
-        } else if (rand < 0.32) { // 15% 射手
+        } else if (rand < 0.35) { // 15% 射手 (原 0.32 + 0.03)
             type = 'shooter'; hp = 8; speed = baseZombieSpeed * 0.5; symbol = '🔫'; 
         } 
         else if (isGiantWave) {
-            if (rand < 0.52) { // 20% 铁桶
+            if (rand < 0.55) { // 20% 铁桶 (原 0.52 + 0.03)
                 type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-            } else if (rand < 0.8) { // 28% 路障
+            } else if (rand < 0.83) { // 28% 路障 (原 0.8 + 0.03)
                 type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
             }
-        } else { // 正常模式
-            if (rand < 0.42) { // 10% 铁桶
+        } else { 
+            if (rand < 0.45) { // 10% 铁桶 (原 0.42 + 0.03)
                 type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-            } else if (rand < 0.6) { // 18% 路障
+            } else if (rand < 0.63) { // 18% 路障 (原 0.6 + 0.03)
                 type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
             }
+        }
+        // ... (其余代码保持不变)
+
             // 剩下的 40% 是普通姜丝
         }
         // -----------------------------
