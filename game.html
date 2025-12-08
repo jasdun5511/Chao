@@ -453,50 +453,53 @@
     }
 
     function createPlant(r, c, type) {
-        const el = document.createElement('div');
-        el.className = 'element';
-        
-        el.style.left = c * 100 + 10 + 'px';
-        el.style.top = r * 100 + 10 + 'px';
-        
-        let hp = 5;
-        let symbol = '';
-        let plant = { r, c, hp, el, dead: false, type: type };
-
-        if (type === 'sunflower') {
-            symbol = '🌻'; hp = 4;
-            const timer = setInterval(() => {
-                if (plant.dead) { clearInterval(timer); return; }
-                sun += 25; sunText.innerText = sun; updateCards();
-                el.style.transform = "scale(1.3)";
-                setTimeout(() => el.style.transform = "scale(1)", 200);
-            }, 4000);
-        } else if (type === 'pea') {
-            symbol = '🌱'; hp = 5;
-            const timer = setInterval(() => {
-                if (plant.dead) { clearInterval(timer); return; }
-                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-                if (hasEnemy) createBullet(r, c, false);
-            }, 1200);
-        } else if (type === 'ice') {
-            symbol = '🧊'; hp = 5;
-            const timer = setInterval(() => {
-                if (plant.dead) { clearInterval(timer); return; }
-                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
-                if (hasEnemy) createBullet(r, c, true);
-            }, 1200);
-        } else if (type === 'nut') {
-            // 修复：调整为合理的生命值 (40点)
-            symbol = '🌰'; hp = 10000; 
-        } else if (type === 'bomb') {
-            symbol = '🍒'; hp = 10000; // 炸弹生命值不重要，立即爆炸
-            setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
-        }
-
-        el.innerText = symbol;
-        board.appendChild(el);
-        grid[r][c] = plant;
+    const el = document.createElement('div');
+    el.className = 'element';
+    
+    el.style.left = c * 100 + 10 + 'px';
+    el.style.top = r * 100 + 10 + 'px';
+    
+    let initialHp = 5;
+    let symbol = '';
+    
+    if (type === 'sunflower') {
+        symbol = '🌻'; initialHp = 4;
+        const timer = setInterval(() => {
+            if (plant.dead) { clearInterval(timer); return; }
+            sun += 25; sunText.innerText = sun; updateCards();
+            el.style.transform = "scale(1.3)";
+            setTimeout(() => el.style.transform = "scale(1)", 200);
+        }, 4000);
+    } else if (type === 'pea') {
+        symbol = '🌱'; initialHp = 5;
+        const timer = setInterval(() => {
+            if (plant.dead) { clearInterval(timer); return; }
+            const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+            if (hasEnemy) createBullet(r, c, false);
+        }, 1200);
+    } else if (type === 'ice') {
+        symbol = '🧊'; initialHp = 5;
+        const timer = setInterval(() => {
+            if (plant.dead) { clearInterval(timer); return; }
+            const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+            if (hasEnemy) createBullet(r, c, true);
+        }, 1200);
+    } else if (type === 'nut') {
+        symbol = '🌰'; 
+        initialHp = 400; // 显著增加坚果墙的血量，防止瞬间死亡
+    } else if (type === 'bomb') {
+        symbol = '🍒'; initialHp = 1;
+        setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
     }
+
+    el.innerText = symbol;
+    board.appendChild(el);
+    
+    // 确保 plant 对象使用正确的初始血量
+    let plant = { r, c, hp: initialHp, el, dead: false, type: type, maxHp: initialHp };
+    grid[r][c] = plant;
+}
+
 
     function createBullet(r, c, isIce) {
         const el = document.createElement('div');
