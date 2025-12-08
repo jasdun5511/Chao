@@ -490,9 +490,9 @@ let spawnIntervalId = null;
                     if (hasEnemy) createBullet(r, c, true);
                 }, 1200);
             } else if (type === 'nut') {
-                symbol = '🌰'; hp = 175;
+                symbol = '🌰'; hp = 2000;
             } else if (type === 'bomb') {
-                symbol = '🍒'; hp = 1000;
+                symbol = '🍒'; hp = 10000;
                 setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
             }
 
