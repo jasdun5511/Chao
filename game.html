@@ -656,7 +656,7 @@
         }
     }
 
-    function spawnZombie() {
+        function spawnZombie() {
         if (!gameActive) return;
         const r = Math.floor(Math.random() * 5);
         const el = document.createElement('div');
@@ -670,31 +670,27 @@
         let thrownImp = false;
 
         const isGiantWave = (normalSpawnRate <= 1000); 
-        
-                // --- 新增/调整的随机分配 ---
-        if (rand < 0.05) { // 5% 巨人姜丝 (原 0.02 + 0.03)
+
+        // --- 恢复原始随机分配 ---
+        if (rand < 0.02) { // 2% 巨人姜丝
             type = 'gargantuar'; hp = 200; speed = baseZombieSpeed * 0.25; symbol = '🗿'; thrownImp = false;
-        } else if (rand < 0.20) { // 15% 疾跑者 (原 0.17 + 0.03)
+        } else if (rand < 0.17) { // 15% 疾跑者 (0.02 到 0.17)
             type = 'runner'; hp = 3; speed = baseZombieSpeed * 1.5; symbol = '🏃‍♂️'; 
-        } else if (rand < 0.35) { // 15% 射手 (原 0.32 + 0.03)
+        } else if (rand < 0.32) { // 15% 射手 (0.17 到 0.32)
             type = 'shooter'; hp = 8; speed = baseZombieSpeed * 0.5; symbol = '🔫'; 
         } 
         else if (isGiantWave) {
-            if (rand < 0.55) { // 20% 铁桶 (原 0.52 + 0.03)
+            if (rand < 0.52) { // 20% 铁桶 (0.32 到 0.52)
                 type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-            } else if (rand < 0.83) { // 28% 路障 (原 0.8 + 0.03)
+            } else if (rand < 0.8) { // 28% 路障 (0.52 到 0.80)
                 type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
-            }
-        } else { 
-            if (rand < 0.45) { // 10% 铁桶 (原 0.42 + 0.03)
+            } // 剩下的 20% 仍是普通姜丝
+        } else { // 正常模式
+            if (rand < 0.42) { // 10% 铁桶 (0.32 到 0.42)
                 type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
-            } else if (rand < 0.63) { // 18% 路障 (原 0.6 + 0.03)
+            } else if (rand < 0.6) { // 18% 路障 (0.42 到 0.60)
                 type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
-            }
-        }
-        // ... (其余代码保持不变)
-
-            // 剩下的 40% 是普通姜丝
+            } // 剩下的 40% 仍是普通姜丝
         }
         // -----------------------------
         
@@ -707,18 +703,18 @@
 
         if (type === 'gargantuar') {
             el.classList.add('gargantuar-style');
-            el.style.top = r * 100 + 'px'; // 巨人稍微往下放一点
+            el.style.top = r * 100 + 'px';
         }
 
         zombies.push({ 
             x: startX, row: r, el, hp: hp, 
-            maxHp: hp, // 记录最大生命值，所有僵尸都需要
+            maxHp: hp, 
             baseSpeed: speed, speed: speed, 
             dead: false, eating: false,
             frozenTimer: 0,
             type: type, 
             shootCooldown: 0,
-            thrownImp: thrownImp // 仅用于巨人僵尸
+            thrownImp: thrownImp 
         });
     }
 
