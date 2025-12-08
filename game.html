@@ -772,7 +772,7 @@
                     const plant = grid[b.row][col];
                     if (plant && !plant.dead) {
                         if (b.x < col * 100 + 80 && b.x > col * 100 + 20) { 
-                            plant.hp -= 5; // 射手姜丝伤害调整为 5
+                            plant.hp -= 1; // 射手姜丝伤害调整为 5
                             updatePlantHP(plant);
                             plant.el.style.opacity = 0.5;
                             setTimeout(() => plant.el.style.opacity = 1, 100);
