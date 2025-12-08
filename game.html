@@ -128,4 +128,294 @@
         if (grid[r][c]) { showMessage("此地已有植物", "red"); return; }
         
         const type = selection.type;
-   
+        const cost = selection.cost;
+        
+        const cd = cardCooldowns[type];
+        if (cd.remaining > 0) return;
+        if (sun < cost) return;
+
+        sun -= cost;
+        cd.remaining = cd.time; 
+        sunText.innerText = sun;
+        updateCards();
+
+        createPlant(r, c, type);
+        
+        selection = null;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('active-zone'));
+        showMessage("种植成功！", "#4CAF50");
+    }
+
+    function createPlant(r, c, type) {
+        const el = document.createElement('div');
+        el.className = 'element';
+        
+        el.style.left = c * 100 + 10 + 'px';
+        el.style.top = r * 100 + 10 + 'px';
+        
+        let hp = 5;
+        let symbol = '';
+        let plant = { r, c, hp, el, dead: false, type: type };
+
+        if (type === 'sunflower') {
+            symbol = '🌻'; hp = 4;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                sun += 25; sunText.innerText = sun; updateCards();
+                el.style.transform = "scale(1.3)";
+                setTimeout(() => el.style.transform = "scale(1)", 200);
+            }, 4000);
+        } else if (type === 'pea') {
+            symbol = '🌱'; hp = 5;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                if (hasEnemy) createBullet(r, c, false);
+            }, 1200);
+        } else if (type === 'ice') {
+            symbol = '🧊'; hp = 5;
+            const timer = setInterval(() => {
+                if (plant.dead) { clearInterval(timer); return; }
+                const hasEnemy = zombies.some(z => z.row === r && z.x > c * 100);
+                if (hasEnemy) createBullet(r, c, true);
+            }, 1200);
+        } else if (type === 'nut') {
+            // 修复：调整为合理的生命值 (40点)
+            symbol = '🌰'; hp = 40; 
+        } else if (type === 'bomb') {
+            symbol = '🍒'; hp = 1; // 炸弹生命值不重要，立即爆炸
+            setTimeout(() => { if (!plant.dead) { explode(r, c); killPlant(plant); } }, 2000);
+        }
+
+        el.innerText = symbol;
+        board.appendChild(el);
+        grid[r][c] = plant;
+    }
+
+    function createBullet(r, c, isIce) {
+        const el = document.createElement('div');
+        el.className = 'element bullet';
+        el.innerText = isIce ? '🔵' : '🟢';
+        let startX = c * 100 + 50;
+        let startY = r * 100 + 40;
+        el.style.left = startX + 'px';
+        el.style.top = startY + 'px'; 
+        board.appendChild(el);
+        bullets.push({ x: startX, y: startY, row: r, el, dead: false, isIce: isIce });
+    }
+
+    function explode(r, c) {
+        showMessage("💥 BOOM! 💥", "red");
+        const blast = document.createElement('div');
+        blast.innerText = '🔥';
+        blast.style.position = 'absolute'; blast.style.fontSize = '150px';
+        blast.style.left = c * 100 - 50 + 'px'; 
+        blast.style.top = r * 100 - 50 + 'px'; 
+        blast.style.zIndex = 100;
+        board.appendChild(blast);
+        setTimeout(() => blast.remove(), 500);
+
+        const minRow = Math.max(0, r - 1);
+        const maxRow = Math.min(4, r + 1);
+
+        for (const z of zombies) {
+            if (z.dead) continue;
+            
+            if (z.row >= minRow && z.row <= maxRow) {
+                const minX = (c - 1) * 100; 
+                const maxX = (c + 2) * 100; 
+                const zombieCenter = z.x + 40;
+                
+                if (zombieCenter >= minX && zombieCenter < maxX) {
+                    killZombie(z);
+                }
+            }
+        }
+    }
+
+    function spawnZombie() {
+        if (!gameActive) return;
+        const r = Math.floor(Math.random() * 5);
+        const el = document.createElement('div');
+        el.className = 'element zombie';
+        
+        const rand = Math.random();
+        let type = 'normal';
+        let hp = 6;
+        let speed = baseZombieSpeed; 
+        let symbol = '🐷';
+
+        const isGiantWave = (normalSpawnRate <= 1000); 
+
+        if (isGiantWave) {
+            if (rand < 0.2) { 
+                type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
+            } else if (rand < 0.5) {
+                type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
+            }
+        } else { 
+            if (rand < 0.1) {
+                type = 'bucket'; hp = 35; speed = baseZombieSpeed * 0.75; symbol = '👺'; 
+            } else if (rand < 0.35) {
+                type = 'cone'; hp = 18; speed = baseZombieSpeed * 0.9; symbol = '⛑️';
+            }
+        }
+        
+        el.innerText = symbol;
+        let startX = 900;
+        let startY = r * 100 + 10;
+
+        el.style.left = startX + 'px'; el.style.top = startY + 'px';
+        board.appendChild(el);
+
+        zombies.push({ 
+            x: startX, row: r, el, hp: hp, 
+            baseSpeed: speed, speed: speed, 
+            dead: false, eating: false,
+            frozenTimer: 0
+        });
+    }
+
+    // --- 定时器和难度逻辑 (统一管理) ---
+
+    // Function to start/restart spawning with current rate
+    function startSpawning() {
+        if (spawnIntervalId) clearInterval(spawnIntervalId);
+        spawnIntervalId = setInterval(spawnZombie, normalSpawnRate);
+    }
+
+    // 难度升级逻辑（每 30 秒）
+    setInterval(() => {
+        if (!gameActive) return;
+        difficultyLevel++;
+        normalSpawnRate = Math.max(1500, normalSpawnRate - 500);
+        baseZombieSpeed = Math.min(1.0, baseZombieSpeed + 0.1);
+        startSpawning();
+        showMessage(`难度提升至 Lv.${difficultyLevel}！僵尸更快了。`, "yellow");
+    }, 30000); 
+
+    // 巨波逻辑（每 60 秒触发一次）
+    setInterval(() => {
+        if (!gameActive) return;
+        const originalRate = normalSpawnRate;
+        normalSpawnRate = 1000;
+        startSpawning();
+        showMessage("🚨 巨波来袭！大量姜丝炒肉正在赶来！", "red");
+
+        setTimeout(() => {
+            normalSpawnRate = originalRate; 
+            startSpawning();
+            showMessage(`巨波结束，恢复至 Lv.${difficultyLevel} 难度。`, "#ffeb3b");
+        }, 10000); 
+    }, 60000); 
+
+    // 主游戏逻辑循环
+    setInterval(gameLoop, 20);
+
+    // 阳光自然掉落
+    setInterval(() => { if (gameActive) { sun += 25; sunText.innerText = sun; updateCards(); } }, 6000);
+
+    // 冷却计时器，每 20ms 运行一次
+    const COOLDOWN_TICK = 20; 
+    setInterval(() => {
+        if (!gameActive) return;
+        for (const type in cardCooldowns) {
+            const cd = cardCooldowns[type];
+            if (cd.remaining > 0) {
+                cd.remaining = Math.max(0, cd.remaining - COOLDOWN_TICK);
+            }
+        }
+        updateCards();
+    }, COOLDOWN_TICK);
+
+
+    function gameLoop() {
+        if (!gameActive) return;
+
+        // 子弹逻辑
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const b = bullets[i];
+            b.x += 6;
+            b.el.style.left = b.x + 'px';
+            let hit = false;
+            for (const z of zombies) {
+                if (z.dead) continue;
+                if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
+                    z.hp--;
+                    if (b.isIce) {
+                        z.frozenTimer = 100;
+                        z.el.classList.add('frozen');
+                    }
+                    z.el.style.opacity = 0.5;
+                    setTimeout(() => z.el.style.opacity = 1, 100);
+                    hit = true;
+                    if (z.hp <= 0) killZombie(z);
+                    break;
+                }
+            }
+            if (hit || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
+        }
+
+        // 姜丝炒肉逻辑
+        for (let i = zombies.length - 1; i >= 0; i--) {
+            const z = zombies[i];
+            if (z.dead) continue;
+
+            if (z.frozenTimer > 0) {
+                z.speed = z.baseSpeed * 0.5;
+                z.frozenTimer--;
+            } else {
+                z.speed = z.baseSpeed;
+                z.el.classList.remove('frozen');
+            }
+
+            if (!z.eating) {
+                z.x -= z.speed;
+                z.el.style.left = z.x + 'px';
+            }
+
+            const col = Math.floor((z.x + 40) / 100);
+            if (col >= 0 && col < 9) {
+                const plant = grid[z.row][col];
+                if (plant && !plant.dead) {
+                    if (z.x < (col * 100 + 60)) {
+                        z.eating = true;
+                        if (Math.random() < 0.05) { 
+                            plant.hp--;
+                            plant.el.style.opacity = 0.5;
+                            setTimeout(() => plant.el.style.opacity = 1, 100);
+                            if (plant.hp <= 0) { killPlant(plant); z.eating = false; }
+                        }
+                    }
+                } else { z.eating = false; }
+            }
+
+            if (z.x < -40) {
+                gameActive = false;
+                saveScore(score);
+                alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
+                location.reload();
+                return;
+            }
+        }
+    }
+
+    function killZombie(z) {
+        z.dead = true; z.el.remove();
+        const idx = zombies.indexOf(z);
+        if (idx > -1) zombies.splice(idx, 1);
+        score += 10; scoreText.innerText = score;
+    }
+    function killPlant(p) {
+        p.dead = true; p.el.remove(); grid[p.r][p.c] = null;
+    }
+    function showMessage(text, color) {
+        msgText.innerText = text; msgText.style.color = color;
+    }
+
+    // --- 游戏启动 ---
+    updateCards();
+    displayLeaderboard();
+    startSpawning(); // 确保僵尸生成机制被启动
+</script>
