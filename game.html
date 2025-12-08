@@ -639,75 +639,94 @@
 
 
     function gameLoop() {
-        if (!gameActive) return;
+    if (!gameActive) return;
 
-        // 子弹逻辑
-        for (let i = bullets.length - 1; i >= 0; i--) {
-            const b = bullets[i];
-            b.x += 6;
-            b.el.style.left = b.x + 'px';
-            let hit = false;
-            for (const z of zombies) {
-                if (z.dead) continue;
-                if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
-                    z.hp--;
-                    if (b.isIce) {
-                        z.frozenTimer = 100;
-                        z.el.classList.add('frozen');
-                    }
-                    z.el.style.opacity = 0.5;
-                    setTimeout(() => z.el.style.opacity = 1, 100);
-                    hit = true;
-                    if (z.hp <= 0) killZombie(z);
-                    break;
+    // 子弹逻辑
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += 6;
+        b.el.style.left = b.x + 'px';
+        let hit = false;
+        for (const z of zombies) {
+            if (z.dead) continue;
+            // 僵尸血量只有 6，子弹伤害 1
+            if (z.row === b.row && b.x > z.x + 20 && b.x < z.x + 80) {
+                z.hp--;
+                if (b.isIce) {
+                    z.frozenTimer = 100;
+                    z.el.classList.add('frozen');
                 }
+                z.el.style.opacity = 0.5;
+                setTimeout(() => z.el.style.opacity = 1, 100);
+                hit = true;
+                if (z.hp <= 0) killZombie(z);
+                break;
             }
-            if (hit || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
+        }
+        if (hit || b.x > 900) { b.el.remove(); bullets.splice(i, 1); }
+    }
+
+    // 姜丝炒肉逻辑
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const z = zombies[i];
+        if (z.dead) continue;
+
+        // 攻击冷却计时器
+        if (!z.attackCooldown) z.attackCooldown = 0;
+        if (z.eating) z.attackCooldown++;
+
+
+        if (z.frozenTimer > 0) {
+            z.speed = z.baseSpeed * 0.5;
+            z.frozenTimer--;
+        } else {
+            z.speed = z.baseSpeed;
+            z.el.classList.remove('frozen');
         }
 
-        // 姜丝炒肉逻辑
-        for (let i = zombies.length - 1; i >= 0; i--) {
-            const z = zombies[i];
-            if (z.dead) continue;
+        if (!z.eating) {
+            z.x -= z.speed;
+            z.el.style.left = z.x + 'px';
+        }
 
-            if (z.frozenTimer > 0) {
-                z.speed = z.baseSpeed * 0.5;
-                z.frozenTimer--;
-            } else {
-                z.speed = z.baseSpeed;
-                z.el.classList.remove('frozen');
-            }
-
-            if (!z.eating) {
-                z.x -= z.speed;
-                z.el.style.left = z.x + 'px';
-            }
-
-            const col = Math.floor((z.x + 40) / 100);
-            if (col >= 0 && col < 9) {
-                const plant = grid[z.row][col];
-                if (plant && !plant.dead) {
-                    if (z.x < (col * 100 + 60)) {
-                        z.eating = true;
-                        if (Math.random() < 0.05) { 
-                            plant.hp--;
-                            plant.el.style.opacity = 0.5;
-                            setTimeout(() => plant.el.style.opacity = 1, 100);
-                            if (plant.hp <= 0) { killPlant(plant); z.eating = false; }
+        const col = Math.floor((z.x + 40) / 100);
+        if (col >= 0 && col < 9) {
+            const plant = grid[z.row][col];
+            if (plant && !plant.dead) {
+                if (z.x < (col * 100 + 60)) {
+                    z.eating = true;
+                    
+                    // 🚨 攻击判定修复：只有当冷却时间到了 (30次循环 ≈ 600ms) 才进行攻击
+                    if (z.attackCooldown >= 30) { 
+                        plant.hp--;
+                        
+                        // 强制重置冷却时间
+                        z.attackCooldown = 0; 
+                        
+                        plant.el.style.opacity = 0.5;
+                        setTimeout(() => plant.el.style.opacity = 1, 100);
+                        
+                        if (plant.hp <= 0) { 
+                            killPlant(plant); 
+                            z.eating = false; 
                         }
                     }
-                } else { z.eating = false; }
-            }
-
-            if (z.x < -40) {
-                gameActive = false;
-                saveScore(score);
-                alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
-                location.reload();
-                return;
+                }
+            } else { 
+                z.eating = false; 
+                z.attackCooldown = 0; // 如果没东西吃，冷却清零
             }
         }
+
+        if (z.x < -40) {
+            gameActive = false;
+            saveScore(score);
+            alert(`🧠 游戏结束！\n你的脑子被姜丝吃了。\n最终得分: ${score}`);
+            location.reload();
+            return;
+        }
     }
+}
 
     function killZombie(z) {
         z.dead = true; z.el.remove();
